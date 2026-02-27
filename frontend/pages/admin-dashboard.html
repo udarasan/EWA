@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiSphere AI | Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <div class="flex min-h-screen">
+      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
+        <h2 class="text-xl font-bold">SentiSphere AI</h2>
+        <p class="text-slate-400 text-sm mt-1">HR Manager Panel</p>
+        <nav class="mt-8 space-y-3">
+          <a href="./admin-dashboard.html" class="block bg-slate-800 px-3 py-2 rounded-lg">
+            Dashboard
+          </a>
+          <a href="./admin-feedback.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Feedback Explorer
+          </a>
+          <a href="./admin-employees.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Employee Insights
+          </a>
+          <button
+            id="logoutBtn"
+            class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg"
+          >
+            Logout
+          </button>
+        </nav>
+      </aside>
+
+      <main class="flex-1 p-6 md:p-10">
+        <div class="max-w-7xl mx-auto space-y-6">
+          <header>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">HR Dashboard</h1>
+            <p class="text-slate-500 mt-1">Sentiment trends and latest employee feedback.</p>
+          </header>
+
+          <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Total Feedback</p>
+              <p id="totalFeedback" class="text-2xl font-bold text-slate-800">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Positive</p>
+              <p id="positiveCount" class="text-2xl font-bold text-green-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Negative</p>
+              <p id="negativeCount" class="text-2xl font-bold text-red-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Neutral</p>
+              <p id="neutralCount" class="text-2xl font-bold text-yellow-600">0</p>
+            </div>
+          </section>
+
+          <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow p-6">
+              <h2 class="text-lg font-semibold text-slate-800">Positive vs Negative vs Neutral</h2>
+              <canvas id="sentimentChart" class="mt-4"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow p-6">
+              <h2 class="text-lg font-semibold text-slate-800">Mood Distribution</h2>
+              <canvas id="emotionChart" class="mt-4"></canvas>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <h2 class="text-lg font-semibold text-slate-800">Feedback Volume Trend (14 days)</h2>
+            <canvas id="trendChart" class="mt-4"></canvas>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-800">Recent Feedback</h2>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr class="text-slate-500 border-b">
+                    <th class="py-2">Employee</th>
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Language</th>
+                    <th class="py-2">Mood</th>
+                    <th class="py-2">Emotion</th>
+                    <th class="py-2">Score</th>
+                    <th class="py-2">Message</th>
+                  </tr>
+                </thead>
+                <tbody id="recentTable" class="text-slate-700"></tbody>
+              </table>
+            </div>
+          </section>
+          <div id="messageBox" class="text-sm"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3001/api";
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+
+      if (!token || !user || user.role !== "admin") {
+        window.location.href = "./login.html";
+      }
+
+      const messageBox = document.getElementById("messageBox");
+      const totalFeedbackEl = document.getElementById("totalFeedback");
+      const positiveCountEl = document.getElementById("positiveCount");
+      const negativeCountEl = document.getElementById("negativeCount");
+      const neutralCountEl = document.getElementById("neutralCount");
+      const tableBody = document.getElementById("recentTable");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "./login.html";
+      });
+
+      let sentimentChart;
+      let emotionChart;
+      let trendChart;
+
+      const renderCharts = (sentiment, moodDistribution) => {
+        const sentimentCtx = document.getElementById("sentimentChart");
+        const emotionCtx = document.getElementById("emotionChart");
+
+        if (sentimentChart) sentimentChart.destroy();
+        if (emotionChart) emotionChart.destroy();
+
+        sentimentChart = new Chart(sentimentCtx, {
+          type: "pie",
+          data: {
+            labels: ["Positive", "Negative", "Neutral"],
+            datasets: [
+              {
+                data: [sentiment.Positive, sentiment.Negative, sentiment.Neutral],
+                backgroundColor: ["#22c55e", "#ef4444", "#eab308"]
+              }
+            ]
+          }
+        });
+
+        emotionChart = new Chart(emotionCtx, {
+          type: "bar",
+          data: {
+            labels: moodDistribution.map((item) => item.mood),
+            datasets: [
+              {
+                label: "Count",
+                data: moodDistribution.map((item) => Number(item.count)),
+                backgroundColor: "#3b82f6"
+              }
+            ]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { precision: 0 }
+              }
+            }
+          }
+        });
+      };
+
+      const renderRecentTable = (recentFeedback) => {
+        tableBody.innerHTML = "";
+        recentFeedback.forEach((item) => {
+          const row = document.createElement("tr");
+          row.className = "border-b";
+          row.innerHTML = `
+            <td class="py-2">${item.employee_name}</td>
+            <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
+            <td class="py-2">${item.language}</td>
+            <td class="py-2">${item.mood}</td>
+            <td class="py-2">${item.emotion_label}</td>
+            <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
+            <td class="py-2">${item.message}</td>
+          `;
+          tableBody.appendChild(row);
+        });
+      };
+
+      const renderTrendChart = (trendData) => {
+        const trendCtx = document.getElementById("trendChart");
+        if (trendChart) trendChart.destroy();
+        trendChart = new Chart(trendCtx, {
+          type: "line",
+          data: {
+            labels: trendData.map((item) => item.day),
+            datasets: [
+              {
+                label: "Feedback Count",
+                data: trendData.map((item) => Number(item.count)),
+                borderColor: "#2563eb",
+                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                tension: 0.35,
+                fill: true
+              }
+            ]
+          },
+          options: {
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { precision: 0 }
+              }
+            }
+          }
+        });
+      };
+
+      const loadDashboard = async () => {
+        try {
+          const [dashboardResponse, trendResponse] = await Promise.all([
+            fetch(`${API_BASE}/admin/dashboard`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE}/admin/trend?days=14`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+          ]);
+
+          const dashboardData = await dashboardResponse.json();
+          const trendData = await trendResponse.json();
+
+          if (!dashboardResponse.ok) {
+            throw new Error(dashboardData.message || "Failed to load dashboard.");
+          }
+          if (!trendResponse.ok) {
+            throw new Error(trendData.message || "Failed to load trend.");
+          }
+
+          totalFeedbackEl.textContent = dashboardData.totalFeedback;
+          positiveCountEl.textContent = dashboardData.sentiment.Positive;
+          negativeCountEl.textContent = dashboardData.sentiment.Negative;
+          neutralCountEl.textContent = dashboardData.sentiment.Neutral;
+          renderCharts(dashboardData.sentiment, dashboardData.moodDistribution);
+          renderTrendChart(trendData.trend || []);
+          renderRecentTable(dashboardData.recentFeedback);
+        } catch (error) {
+          messageBox.textContent = error.message;
+          messageBox.className = "text-sm text-red-600";
+        }
+      };
+
+      loadDashboard();
+    </script>
+  </body>
+</html>

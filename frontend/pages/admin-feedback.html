@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiSphere AI | Feedback Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <div class="flex min-h-screen">
+      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
+        <h2 class="text-xl font-bold">SentiSphere AI</h2>
+        <p class="text-slate-400 text-sm mt-1">HR Manager Panel</p>
+        <nav class="mt-8 space-y-3">
+          <a href="./admin-dashboard.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Dashboard
+          </a>
+          <a href="./admin-feedback.html" class="block bg-slate-800 px-3 py-2 rounded-lg">
+            Feedback Explorer
+          </a>
+          <a href="./admin-employees.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Employee Insights
+          </a>
+          <button id="logoutBtn" class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">
+            Logout
+          </button>
+        </nav>
+      </aside>
+
+      <main class="flex-1 p-6 md:p-10">
+        <div class="max-w-7xl mx-auto space-y-6">
+          <header>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Feedback Explorer</h1>
+            <p class="text-slate-500 mt-1">Filter and search multilingual feedback records.</p>
+          </header>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <form id="filterForm" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              <select id="language" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="">All Languages</option>
+                <option value="Sinhala">Sinhala</option>
+                <option value="Tamil">Tamil</option>
+                <option value="English">English</option>
+              </select>
+              <select id="mood" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="">All Moods</option>
+                <option value="Happy">Happy</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Stressed">Stressed</option>
+                <option value="Angry">Angry</option>
+              </select>
+              <select id="emotion" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+                <option value="">All Emotions</option>
+                <option value="Positive">Positive</option>
+                <option value="Neutral">Neutral</option>
+                <option value="Negative">Negative</option>
+              </select>
+              <input id="fromDate" type="date" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input id="toDate" type="date" class="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+              <input
+                id="query"
+                type="text"
+                placeholder="Search name/message"
+                class="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+              <button class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm">
+                Apply Filters
+              </button>
+            </form>
+            <div id="countLabel" class="mt-3 text-sm text-slate-500"></div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr class="text-slate-500 border-b">
+                    <th class="py-2">Employee</th>
+                    <th class="py-2">Email</th>
+                    <th class="py-2">Language</th>
+                    <th class="py-2">Mood</th>
+                    <th class="py-2">Emotion</th>
+                    <th class="py-2">Score</th>
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Message</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+              </table>
+            </div>
+          </section>
+          <div id="messageBox" class="text-sm"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3001/api";
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      if (!token || !user || user.role !== "admin") {
+        window.location.href = "./login.html";
+      }
+
+      const logoutBtn = document.getElementById("logoutBtn");
+      const filterForm = document.getElementById("filterForm");
+      const resultsBody = document.getElementById("resultsBody");
+      const messageBox = document.getElementById("messageBox");
+      const countLabel = document.getElementById("countLabel");
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "./login.html";
+      });
+
+      const getFilterQuery = () => {
+        const params = new URLSearchParams();
+        ["language", "mood", "emotion", "fromDate", "toDate", "query"].forEach((id) => {
+          const value = document.getElementById(id).value.trim();
+          if (value) params.append(id, value);
+        });
+        return params.toString();
+      };
+
+      const renderRows = (feedback) => {
+        resultsBody.innerHTML = "";
+        feedback.forEach((item) => {
+          const row = document.createElement("tr");
+          row.className = "border-b text-slate-700";
+          row.innerHTML = `
+            <td class="py-2">${item.employee_name}</td>
+            <td class="py-2">${item.employee_email}</td>
+            <td class="py-2">${item.language}</td>
+            <td class="py-2">${item.mood}</td>
+            <td class="py-2">${item.emotion_label}</td>
+            <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
+            <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
+            <td class="py-2">${item.message}</td>
+          `;
+          resultsBody.appendChild(row);
+        });
+        countLabel.textContent = `${feedback.length} feedback records found`;
+      };
+
+      const loadFeedback = async () => {
+        try {
+          const query = getFilterQuery();
+          const response = await fetch(`${API_BASE}/admin/feedback?${query}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Failed to load feedback.");
+          renderRows(data.feedback || []);
+        } catch (error) {
+          messageBox.textContent = error.message;
+          messageBox.className = "text-sm text-red-600";
+        }
+      };
+
+      filterForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        await loadFeedback();
+      });
+
+      loadFeedback();
+    </script>
+  </body>
+</html>

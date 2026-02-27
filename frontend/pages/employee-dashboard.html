@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiSphere AI | Employee Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <div class="flex min-h-screen">
+      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
+        <h2 class="text-xl font-bold">SentiSphere AI</h2>
+        <p class="text-slate-400 text-sm mt-1">Employee Panel</p>
+        <nav class="mt-8 space-y-3">
+          <a href="#" class="block bg-slate-800 px-3 py-2 rounded-lg">Submit Feedback</a>
+          <button
+            id="logoutBtn"
+            class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg"
+          >
+            Logout
+          </button>
+        </nav>
+      </aside>
+
+      <main class="flex-1 p-6 md:p-10">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <header>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Employee Feedback</h1>
+            <p class="text-slate-500 mt-1">Share your experience with optional audio.</p>
+          </header>
+
+          <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Total Submitted</p>
+              <p id="totalCount" class="text-2xl font-bold text-slate-800">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Average Sentiment</p>
+              <p id="avgSentiment" class="text-2xl font-bold text-blue-600">0.00</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Positive</p>
+              <p id="positiveCount" class="text-2xl font-bold text-green-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Negative</p>
+              <p id="negativeCount" class="text-2xl font-bold text-red-600">0</p>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <form id="feedbackForm" class="space-y-4" enctype="multipart/form-data">
+              <div>
+                <label class="block text-sm font-medium text-slate-700">Message</label>
+                <textarea
+                  id="message"
+                  rows="4"
+                  required
+                  class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                ></textarea>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700">Language</label>
+                  <select
+                    id="language"
+                    class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option>Sinhala</option>
+                    <option>Tamil</option>
+                    <option selected>English</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700">Mood</label>
+                  <select
+                    id="mood"
+                    class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option>Happy</option>
+                    <option selected>Neutral</option>
+                    <option>Stressed</option>
+                    <option>Angry</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700">Audio (optional)</label>
+                  <input
+                    id="audio"
+                    type="file"
+                    accept="audio/*"
+                    class="w-full mt-1 text-sm rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2.5 font-medium"
+              >
+                Submit Feedback
+              </button>
+            </form>
+            <div id="messageBox" class="mt-4 text-sm"></div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <h2 class="text-xl font-semibold text-slate-800">My Feedback History</h2>
+            <div class="overflow-x-auto mt-4">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr class="text-slate-500 border-b">
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Language</th>
+                    <th class="py-2">Mood</th>
+                    <th class="py-2">Emotion</th>
+                    <th class="py-2">Score</th>
+                    <th class="py-2">Message</th>
+                  </tr>
+                </thead>
+                <tbody id="feedbackTable" class="text-slate-700"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3001/api";
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+
+      if (!token || !user || user.role !== "employee") {
+        window.location.href = "./login.html";
+      }
+
+      const feedbackForm = document.getElementById("feedbackForm");
+      const tableBody = document.getElementById("feedbackTable");
+      const messageBox = document.getElementById("messageBox");
+      const logoutBtn = document.getElementById("logoutBtn");
+      const totalCountEl = document.getElementById("totalCount");
+      const avgSentimentEl = document.getElementById("avgSentiment");
+      const positiveCountEl = document.getElementById("positiveCount");
+      const negativeCountEl = document.getElementById("negativeCount");
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "./login.html";
+      });
+
+      const loadMyFeedback = async () => {
+        try {
+          const [feedbackResponse, summaryResponse] = await Promise.all([
+            fetch(`${API_BASE}/feedback/my`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }),
+            fetch(`${API_BASE}/feedback/my/summary`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+          ]);
+
+          const data = await feedbackResponse.json();
+          const summaryData = await summaryResponse.json();
+          if (!feedbackResponse.ok) {
+            throw new Error(data.message || "Failed to load feedback.");
+          }
+          if (!summaryResponse.ok) {
+            throw new Error(summaryData.message || "Failed to load feedback summary.");
+          }
+
+          totalCountEl.textContent = summaryData.summary.total_count || 0;
+          avgSentimentEl.textContent = Number(summaryData.summary.avg_sentiment || 0).toFixed(2);
+          positiveCountEl.textContent = summaryData.summary.positive_count || 0;
+          negativeCountEl.textContent = summaryData.summary.negative_count || 0;
+
+          tableBody.innerHTML = "";
+          data.feedback.forEach((item) => {
+            const row = document.createElement("tr");
+            row.className = "border-b";
+            row.innerHTML = `
+              <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
+              <td class="py-2">${item.language}</td>
+              <td class="py-2">${item.mood}</td>
+              <td class="py-2">${item.emotion_label}</td>
+              <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
+              <td class="py-2">${item.message}</td>
+            `;
+            tableBody.appendChild(row);
+          });
+        } catch (error) {
+          messageBox.textContent = error.message;
+          messageBox.className = "mt-4 text-sm text-red-600";
+        }
+      };
+
+      feedbackForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        messageBox.textContent = "";
+
+        const formData = new FormData();
+        formData.append("message", document.getElementById("message").value.trim());
+        formData.append("language", document.getElementById("language").value);
+        formData.append("mood", document.getElementById("mood").value);
+
+        const audioFile = document.getElementById("audio").files[0];
+        if (audioFile) {
+          formData.append("audio", audioFile);
+        }
+
+        try {
+          const response = await fetch(`${API_BASE}/feedback`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to submit feedback.");
+          }
+
+          messageBox.textContent = `Submitted. Emotion: ${data.feedback.emotionLabel}, Score: ${data.feedback.sentimentScore}`;
+          messageBox.className = "mt-4 text-sm text-green-600";
+          feedbackForm.reset();
+          loadMyFeedback();
+        } catch (error) {
+          messageBox.textContent = error.message;
+          messageBox.className = "mt-4 text-sm text-red-600";
+        }
+      });
+
+      loadMyFeedback();
+    </script>
+  </body>
+</html>

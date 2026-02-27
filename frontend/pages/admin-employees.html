@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SentiSphere AI | Employee Insights</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-100 min-h-screen">
+    <div class="flex min-h-screen">
+      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
+        <h2 class="text-xl font-bold">SentiSphere AI</h2>
+        <p class="text-slate-400 text-sm mt-1">HR Manager Panel</p>
+        <nav class="mt-8 space-y-3">
+          <a href="./admin-dashboard.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Dashboard
+          </a>
+          <a href="./admin-feedback.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
+            Feedback Explorer
+          </a>
+          <a href="./admin-employees.html" class="block bg-slate-800 px-3 py-2 rounded-lg">
+            Employee Insights
+          </a>
+          <button id="logoutBtn" class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg">
+            Logout
+          </button>
+        </nav>
+      </aside>
+
+      <main class="flex-1 p-6 md:p-10">
+        <div class="max-w-7xl mx-auto space-y-6">
+          <header>
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Employee Insights</h1>
+            <p class="text-slate-500 mt-1">Track engagement and flag at-risk patterns.</p>
+          </header>
+
+          <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Employees Analysed</p>
+              <p id="employeeCount" class="text-2xl font-bold text-slate-800">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">Low Sentiment (< 0.40)</p>
+              <p id="riskCount" class="text-2xl font-bold text-red-600">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow px-5 py-4">
+              <p class="text-sm text-slate-500">No Feedback Yet</p>
+              <p id="noFeedbackCount" class="text-2xl font-bold text-yellow-600">0</p>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-2xl shadow p-6">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr class="text-slate-500 border-b">
+                    <th class="py-2">Employee</th>
+                    <th class="py-2">Email</th>
+                    <th class="py-2">Feedback Count</th>
+                    <th class="py-2">Avg Sentiment</th>
+                    <th class="py-2">Negative Count</th>
+                    <th class="py-2">Status</th>
+                    <th class="py-2">Last Feedback</th>
+                  </tr>
+                </thead>
+                <tbody id="employeeBody"></tbody>
+              </table>
+            </div>
+          </section>
+          <div id="messageBox" class="text-sm"></div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3001/api";
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user") || "null");
+      if (!token || !user || user.role !== "admin") {
+        window.location.href = "./login.html";
+      }
+
+      const logoutBtn = document.getElementById("logoutBtn");
+      const employeeBody = document.getElementById("employeeBody");
+      const messageBox = document.getElementById("messageBox");
+      const employeeCountEl = document.getElementById("employeeCount");
+      const riskCountEl = document.getElementById("riskCount");
+      const noFeedbackCountEl = document.getElementById("noFeedbackCount");
+
+      logoutBtn.addEventListener("click", () => {
+        localStorage.clear();
+        window.location.href = "./login.html";
+      });
+
+      const getStatusBadge = (avgSentiment, feedbackCount, negativeCount) => {
+        if (Number(feedbackCount) === 0) return `<span class="text-yellow-700">No data</span>`;
+        if (Number(avgSentiment) < 0.4 || Number(negativeCount) >= 3) {
+          return `<span class="text-red-700 font-semibold">At Risk</span>`;
+        }
+        if (Number(avgSentiment) < 0.65) return `<span class="text-yellow-700">Needs Check-In</span>`;
+        return `<span class="text-green-700">Stable</span>`;
+      };
+
+      const loadEmployeeInsights = async () => {
+        try {
+          const response = await fetch(`${API_BASE}/admin/employees`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || "Failed to load employee insights.");
+
+          const employees = data.employees || [];
+          employeeCountEl.textContent = employees.length;
+          riskCountEl.textContent = employees.filter(
+            (item) => Number(item.avg_sentiment || 0) < 0.4 || Number(item.negative_count || 0) >= 3
+          ).length;
+          noFeedbackCountEl.textContent = employees.filter((item) => Number(item.feedback_count) === 0).length;
+
+          employeeBody.innerHTML = "";
+          employees.forEach((item) => {
+            const row = document.createElement("tr");
+            row.className = "border-b text-slate-700";
+            row.innerHTML = `
+              <td class="py-2">${item.name}</td>
+              <td class="py-2">${item.email}</td>
+              <td class="py-2">${item.feedback_count}</td>
+              <td class="py-2">${item.avg_sentiment ? Number(item.avg_sentiment).toFixed(2) : "-"}</td>
+              <td class="py-2">${item.negative_count || 0}</td>
+              <td class="py-2">${getStatusBadge(item.avg_sentiment, item.feedback_count, item.negative_count)}</td>
+              <td class="py-2">${item.last_feedback_at ? new Date(item.last_feedback_at).toLocaleString() : "-"}</td>
+            `;
+            employeeBody.appendChild(row);
+          });
+        } catch (error) {
+          messageBox.textContent = error.message;
+          messageBox.className = "text-sm text-red-600";
+        }
+      };
+
+      loadEmployeeInsights();
+    </script>
+  </body>
+</html>
