@@ -71,17 +71,15 @@ const runSeeder = async () => {
       ]
     };
 
-    const moods = ["Happy", "Neutral", "Stressed", "Angry"];
     const allLanguages = ["English", "Sinhala", "Tamil"];
 
     for (const employee of employeeRows) {
       const entriesPerEmployee = 8;
       for (let i = 0; i < entriesPerEmployee; i += 1) {
         const language = allLanguages[(employee.id + i) % allLanguages.length];
-        const mood = moods[(employee.id + i) % moods.length];
         const samples = languageSamples[language];
         const message = samples[(employee.id + i) % samples.length];
-        const { sentimentScore, emotionLabel } = generateSentimentFromText(message, mood);
+        const { sentimentScore, emotionLabel, mood } = await generateSentimentFromText(message);
 
         await pool.query(
           `INSERT INTO feedback (

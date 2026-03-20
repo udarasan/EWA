@@ -7,25 +7,28 @@ import { generateSentimentFromText } from "../services/sentimentService.js";
 
 export const submitFeedback = async (req, res) => {
   try {
-    const { message, language, mood } = req.body;
+    const { message, language } = req.body;
 
-    if (!message || !language || !mood) {
-      return res.status(400).json({ message: "Message, language and mood are required." });
+    if (!message || !language) {
+      return res.status(400).json({ message: "Message and language are required." });
     }
 
     const allowedLanguages = ["Sinhala", "Tamil", "English"];
-    const allowedMoods = ["Happy", "Neutral", "Stressed", "Angry"];
 
     if (!allowedLanguages.includes(language)) {
       return res.status(400).json({ message: "Invalid language selected." });
     }
 
-    if (!allowedMoods.includes(mood)) {
-      return res.status(400).json({ message: "Invalid mood selected." });
+    let sentimentScore;
+    let emotionLabel;
+    let mood;
+    try {
+      ({ sentimentScore, emotionLabel, mood } = await generateSentimentFromText(message));
+    } catch (err) {
+      return res.status(503).json({
+        message: err.message || "Stress analysis is unavailable."
+      });
     }
-
-    // AI integration point: replace this local call with FastAPI microservice request.
-    const { sentimentScore, emotionLabel } = generateSentimentFromText(message, mood);
     const audioPath = req.file ? `/uploads/${req.file.filename}` : null;
 
     const feedbackId = await createFeedback({

@@ -60,7 +60,7 @@
                 ></textarea>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-slate-700">Language</label>
                   <select
@@ -73,18 +73,6 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-700">Mood</label>
-                  <select
-                    id="mood"
-                    class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  >
-                    <option>Happy</option>
-                    <option selected>Neutral</option>
-                    <option>Stressed</option>
-                    <option>Angry</option>
-                  </select>
-                </div>
-                <div>
                   <label class="block text-sm font-medium text-slate-700">Audio (optional)</label>
                   <input
                     id="audio"
@@ -94,6 +82,10 @@
                   />
                 </div>
               </div>
+              <p class="text-sm text-slate-500">
+                Stress score and emotion are inferred from your message by the analysis model (no manual mood
+                selection).
+              </p>
 
               <button
                 type="submit"
@@ -113,7 +105,7 @@
                   <tr class="text-slate-500 border-b">
                     <th class="py-2">Date</th>
                     <th class="py-2">Language</th>
-                    <th class="py-2">Mood</th>
+                    <th class="py-2">Stress (model)</th>
                     <th class="py-2">Emotion</th>
                     <th class="py-2">Score</th>
                     <th class="py-2">Message</th>
@@ -150,6 +142,12 @@
         window.location.href = "./login.html";
       });
 
+      const stressBandFromMood = (mood) => {
+        if (mood === "Happy") return "Low";
+        if (mood === "Stressed" || mood === "Angry") return "High";
+        return "Medium";
+      };
+
       const loadMyFeedback = async () => {
         try {
           const [feedbackResponse, summaryResponse] = await Promise.all([
@@ -182,7 +180,7 @@
             row.innerHTML = `
               <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
               <td class="py-2">${item.language}</td>
-              <td class="py-2">${item.mood}</td>
+              <td class="py-2">${stressBandFromMood(item.mood)}</td>
               <td class="py-2">${item.emotion_label}</td>
               <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
               <td class="py-2">${item.message}</td>
@@ -202,7 +200,6 @@
         const formData = new FormData();
         formData.append("message", document.getElementById("message").value.trim());
         formData.append("language", document.getElementById("language").value);
-        formData.append("mood", document.getElementById("mood").value);
 
         const audioFile = document.getElementById("audio").files[0];
         if (audioFile) {

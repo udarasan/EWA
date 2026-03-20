@@ -43,11 +43,11 @@
                 <option value="English">English</option>
               </select>
               <select id="mood" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <option value="">All Moods</option>
-                <option value="Happy">Happy</option>
-                <option value="Neutral">Neutral</option>
-                <option value="Stressed">Stressed</option>
-                <option value="Angry">Angry</option>
+                <option value="">All stress levels</option>
+                <option value="Happy">Low (model)</option>
+                <option value="Neutral">Medium (model)</option>
+                <option value="Stressed">High (model)</option>
+                <option value="Angry">Angry (legacy)</option>
               </select>
               <select id="emotion" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
                 <option value="">All Emotions</option>
@@ -78,7 +78,7 @@
                     <th class="py-2">Employee</th>
                     <th class="py-2">Email</th>
                     <th class="py-2">Language</th>
-                    <th class="py-2">Mood</th>
+                    <th class="py-2">Stress (model)</th>
                     <th class="py-2">Emotion</th>
                     <th class="py-2">Score</th>
                     <th class="py-2">Date</th>
@@ -108,6 +108,12 @@
       const messageBox = document.getElementById("messageBox");
       const countLabel = document.getElementById("countLabel");
 
+      const stressBandFromMood = (mood) => {
+        if (mood === "Happy") return "Low";
+        if (mood === "Stressed" || mood === "Angry") return "High";
+        return "Medium";
+      };
+
       logoutBtn.addEventListener("click", () => {
         localStorage.clear();
         window.location.href = "./login.html";
@@ -131,7 +137,7 @@
             <td class="py-2">${item.employee_name}</td>
             <td class="py-2">${item.employee_email}</td>
             <td class="py-2">${item.language}</td>
-            <td class="py-2">${item.mood}</td>
+            <td class="py-2">${stressBandFromMood(item.mood)}</td>
             <td class="py-2">${item.emotion_label}</td>
             <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
             <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>

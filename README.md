@@ -27,6 +27,9 @@ frontend/
   pages/
 database/
   schema.sql
+model/
+  app.py
+  requirements.txt
 README.md
 ```
 
@@ -37,8 +40,8 @@ README.md
 - Register/Login with JWT
 - Password hashing with bcrypt
 - Role-based middleware (`admin`, `employee`)
-- Employee feedback submission (text, language, mood, optional audio)
-- Fake sentiment engine (keyword-based) with DB storage
+- Employee feedback submission (text, language, optional audio); stress from Python model API
+- Model-only sentiment/stress scoring (no keyword fallback)
 - Admin dashboard aggregate endpoint for charts + recent feedback
 
 ---
@@ -78,6 +81,8 @@ Tables:
 ---
 
 ## 5) Setup & Run (Step by Step)
+
+> **On Windows?** Follow **[§6 Setup on Windows](#6-setup-on-windows)** for PATH, MySQL Workbench, venv activation, and PowerShell notes. The steps below match the same flow on macOS / Linux.
 
 ## Prerequisites
 - Node.js 18+
@@ -125,49 +130,134 @@ Then open:
 
 ---
 
-## 6) Fake AI Sentiment Logic (Current Prototype)
+## 6) Setup on Windows
 
-Implemented in:
-- `backend/services/sentimentService.js`
+Use **PowerShell**, **Command Prompt**, or **Windows Terminal** from the project folder. Commands below use PowerShell where it matters (e.g. `Copy-Item`, `Activate.ps1`).
 
-Rules:
-- Contains `happy` or `good` -> Positive
-- Contains `bad` or `stress` -> Negative
-- Else -> Neutral
+### Prerequisites (install first)
 
-The result is saved as:
-- `sentiment_score`
-- `emotion_label`
+| Tool | Notes |
+|------|--------|
+| **Node.js 18+** | [nodejs.org](https://nodejs.org/) LTS installer — tick “Add to PATH”. Check: `node -v` and `npm -v`. |
+| **MySQL 8+** | [MySQL Installer](https://dev.mysql.com/downloads/installer/) (Community Server) or compatible MariaDB. Note the **root password** you set. |
+| **Python 3.10+** | [python.org](https://www.python.org/downloads/windows/) — enable **“Add python.exe to PATH”**. Check: `python --version` or `py -3 --version`. |
+| **Git** (optional) | [git-scm.com](https://git-scm.com/download/win) |
+
+### Step A — MySQL database
+
+1. Ensure the MySQL service is running: **Win + R** → `services.msc` → start **MySQL** (name may be `MySQL80` or similar), or in an **Administrator** Command Prompt: `net start MySQL80` (adjust service name if different).
+2. Create the schema using **MySQL Workbench** (installed with MySQL): connect as `root` → **File → Open SQL Script** → choose `database\schema.sql` from this repo → execute (lightning icon).  
+   **Or** from a terminal (if `mysql.exe` is on your PATH, often under `C:\Program Files\MySQL\MySQL Server 8.0\bin`):
+
+   ```bat
+   cd path\to\EWA
+   mysql -u root -p < database\schema.sql
+   ```
+
+### Step B — Backend
+
+```powershell
+cd path\to\EWA\backend
+npm install
+Copy-Item .env.example .env
+notepad .env
+```
+
+In `.env`, set at least: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME=sentisphere_ai`, `JWT_SECRET`, and **`STRESS_API_URL=http://127.0.0.1:8000`** (required for feedback).
+
+CMD alternative for copying: `copy .env.example .env`
+
+### Step C — Python stress model API
+
+Open a **new** terminal (keep it open while developing):
+
+```powershell
+cd path\to\EWA\model
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+- **Command Prompt** (no PowerShell): run `.\.venv\Scripts\activate.bat` instead of `Activate.ps1`.
+- If PowerShell says scripts are disabled:  
+  `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`  
+  then try activating the venv again.
+- If `python` is not found, try `py -3 -m venv .venv` and `py -3 -m pip install -r requirements.txt`.
+
+First run may download the Hugging Face model; wait until the server is listening on port **8000**.
+
+### Step D — Start the Node backend
+
+Another new terminal:
+
+```powershell
+cd path\to\EWA\backend
+npm start
+```
+
+For auto-reload during development: `npm run dev` (requires `nodemon` from devDependencies).
+
+Default API base: `http://localhost:3001/api` (set `PORT` in `.env` if you change it).
+
+### Step E — Frontend
+
+From the **repository root** (`EWA`):
+
+```powershell
+cd path\to\EWA
+npx serve frontend
+```
+
+Open the URL shown in the terminal (often `http://localhost:3000`) and go to **`/pages/login.html`**.
+
+### Step F — Seed data (optional)
+
+The stress API **must be running** on port 8000. Then:
+
+```powershell
+cd path\to\EWA\backend
+npm run seed
+```
+
+### Common issues on Windows
+
+- **`mysql` is not recognized** — Add MySQL’s `bin` folder to your user **PATH**, or use the full path to `mysql.exe`.
+- **Port already in use (3001 / 8000)** — Stop the other program or change `PORT` / run uvicorn on another port and update `STRESS_API_URL` accordingly.
+- **503 on feedback submit** — Backend cannot reach the model: confirm uvicorn is running and `STRESS_API_URL` in `backend\.env` matches (e.g. `http://127.0.0.1:8000`).
+- **Windows Firewall** — Allow **Node.js** and **Python** if a prompt appears when first binding to ports.
 
 ---
 
-## 7) Future AI Integration Plan (Python FastAPI Microservice)
+## 7) Sentiment / stress analysis (model-only)
 
-Current architecture is already prepared to plug in AI.
+Implemented in `backend/services/sentimentService.js`. Employee feedback **does not** collect mood; scores come **only** from the Python FastAPI service.
 
-### Proposed AI Service
-- Build a Python FastAPI service:
-  - `POST /analyze`
-  - Input: `{ message, language, mood }`
-  - Output: `{ sentiment_score, emotion_label, confidence }`
+**Required for feedback submission:** set `STRESS_API_URL` in `backend/.env` and run the model API.
 
-### Integration Steps
-1. Keep the same interface currently used by `generateSentimentFromText`.
-2. Replace local function call inside `feedbackController` with HTTP request to FastAPI.
-3. Add fallback:
-   - If AI service fails, use the current keyword engine.
-4. Add retries + timeout + logging for production resilience.
-5. Optional:
-   - Add queue (RabbitMQ/Kafka) for heavy audio transcription and sentiment workloads.
+1. From `model/`, install deps and run (see `model/requirements.txt`), e.g.  
+   `uvicorn app:app --host 127.0.0.1 --port 8000`
+2. In `backend/.env`:
+   - `STRESS_API_URL=http://127.0.0.1:8000`
+   - Optional: `STRESS_API_TIMEOUT_MS` (default `15000`)
 
-### Why this design helps viva
-- Demonstrates modular service boundaries.
-- Shows progressive enhancement from prototype to production AI pipeline.
-- Clean separation: web app logic vs model inference logic.
+The backend calls `POST /analyze` with `{ "sentence": "<feedback text>" }`. The service returns `stress_score`, `stress_level`, and `label`; those are mapped to `sentiment_score` (0–1), `emotion_label`, and a stored **stress band** in the existing `mood` column (Low → `Happy`, Medium → `Neutral`, High → `Stressed`) for admin charts and filters.
+
+If the URL is missing or the model call fails, the API responds with **503** and does not use keyword rules.
+
+**Seeding:** `npm run seed` calls the same model endpoint for each row; start the model service first or seeding will fail.
 
 ---
 
-## 8) Screenshot Placeholders (for report/viva)
+## 8) Further production ideas
+
+- Retries and structured logging around the model HTTP call
+- Queue (e.g. RabbitMQ/Kafka) for heavy workloads or audio pipelines
+- Extend FastAPI to accept `language` / `mood` in the request body for richer models
+
+---
+
+## 9) Screenshot Placeholders (for report/viva)
 
 Add screenshots in your report using these labels:
 
@@ -181,7 +271,7 @@ Add screenshots in your report using these labels:
 
 ---
 
-## 9) Notes for Production Hardening
+## 10) Notes for Production Hardening
 
 - Add input validation library (e.g., Zod/Joi)
 - Add refresh token flow + secure cookies

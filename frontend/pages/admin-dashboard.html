@@ -63,7 +63,7 @@
               <canvas id="sentimentChart" class="mt-4"></canvas>
             </div>
             <div class="bg-white rounded-2xl shadow p-6">
-              <h2 class="text-lg font-semibold text-slate-800">Mood Distribution</h2>
+              <h2 class="text-lg font-semibold text-slate-800">Stress distribution (model)</h2>
               <canvas id="emotionChart" class="mt-4"></canvas>
             </div>
           </section>
@@ -82,7 +82,7 @@
                     <th class="py-2">Employee</th>
                     <th class="py-2">Date</th>
                     <th class="py-2">Language</th>
-                    <th class="py-2">Mood</th>
+                    <th class="py-2">Stress (model)</th>
                     <th class="py-2">Emotion</th>
                     <th class="py-2">Score</th>
                     <th class="py-2">Message</th>
@@ -123,6 +123,12 @@
       let emotionChart;
       let trendChart;
 
+      const stressBandFromMood = (mood) => {
+        if (mood === "Happy") return "Low";
+        if (mood === "Stressed" || mood === "Angry") return "High";
+        return "Medium";
+      };
+
       const renderCharts = (sentiment, moodDistribution) => {
         const sentimentCtx = document.getElementById("sentimentChart");
         const emotionCtx = document.getElementById("emotionChart");
@@ -146,7 +152,7 @@
         emotionChart = new Chart(emotionCtx, {
           type: "bar",
           data: {
-            labels: moodDistribution.map((item) => item.mood),
+            labels: moodDistribution.map((item) => stressBandFromMood(item.mood)),
             datasets: [
               {
                 label: "Count",
@@ -175,7 +181,7 @@
             <td class="py-2">${item.employee_name}</td>
             <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
             <td class="py-2">${item.language}</td>
-            <td class="py-2">${item.mood}</td>
+            <td class="py-2">${stressBandFromMood(item.mood)}</td>
             <td class="py-2">${item.emotion_label}</td>
             <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
             <td class="py-2">${item.message}</td>
