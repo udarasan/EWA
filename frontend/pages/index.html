@@ -4,9 +4,37 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentiSphere AI</title>
-    <script>
-      window.location.href = "./login.html";
-    </script>
+    <link rel="stylesheet" href="../css/app.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/tailwind-config.js"></script>
   </head>
-  <body></body>
+  <body class="bg-grain min-h-screen font-sans text-ink-900 bg-mesh bg-ink-50 antialiased">
+    <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div
+        class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-glow ring-1 ring-white/20"
+      >
+        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="1.5"
+            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+          />
+        </svg>
+      </div>
+      <h1 class="mt-8 font-display text-4xl font-semibold tracking-tight text-ink-900 md:text-5xl">SentiSphere</h1>
+      <p class="mt-3 max-w-md text-slate-600">
+        Employee feedback and sentiment insights for healthier teams.
+      </p>
+      <a
+        href="./login.html"
+        class="mt-8 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-700"
+      >
+        Continue to login
+        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+  </body>
 </html>

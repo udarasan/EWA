@@ -1,0 +1,59 @@
+/* SentiSphere — shared polish */
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700&display=swap");
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Subtle grain overlay (no image asset) */
+.bg-grain {
+  position: relative;
+}
+.bg-grain::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  z-index: 0;
+}
+
+.table-shell {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240 / 0.9);
+  overflow: hidden;
+}
+.table-shell table thead {
+  background: linear-gradient(to bottom, rgb(248 250 252), rgb(241 245 249));
+}
+.table-shell tbody tr {
+  transition: background-color 0.15s ease;
+}
+.table-shell tbody tr:hover {
+  background-color: rgb(248 250 252);
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sidebar-link svg {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+input[type="date"],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}

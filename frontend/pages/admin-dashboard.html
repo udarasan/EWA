@@ -4,91 +4,183 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentiSphere AI | Admin Dashboard</title>
+    <link rel="stylesheet" href="../css/app.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/tailwind-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
-  <body class="bg-slate-100 min-h-screen">
-    <div class="flex min-h-screen">
-      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
-        <h2 class="text-xl font-bold">SentiSphere AI</h2>
-        <p class="text-slate-400 text-sm mt-1">HR Manager Panel</p>
-        <nav class="mt-8 space-y-3">
-          <a href="./admin-dashboard.html" class="block bg-slate-800 px-3 py-2 rounded-lg">
+  <body class="bg-grain min-h-screen font-sans text-ink-900 bg-mesh bg-ink-50 antialiased">
+    <div id="sidebarOverlay" class="fixed inset-0 z-40 bg-ink-950/50 backdrop-blur-sm hidden md:hidden" aria-hidden="true"></div>
+
+    <div class="flex min-h-screen w-full">
+      <aside
+        id="sidebar"
+        class="fixed left-0 top-0 z-50 flex h-full w-full max-w-[18rem] -translate-x-full flex-col border-r border-white/10 bg-gradient-to-b from-ink-950 to-ink-900 text-white shadow-2xl transition-transform duration-200 ease-out md:static md:z-0 md:max-w-none md:w-72 md:translate-x-0 md:shadow-none md:border-r-0"
+      >
+        <div class="flex h-16 items-center justify-between border-b border-white/10 px-5 md:h-auto md:border-0 md:px-6 md:pt-8">
+          <div>
+            <p class="font-display text-lg font-semibold tracking-tight">SentiSphere</p>
+            <p class="text-xs text-white/50">HR</p>
+          </div>
+          <button
+            type="button"
+            id="sidebarClose"
+            class="rounded-lg p-2 text-white/70 hover:bg-white/10 md:hidden"
+            aria-label="Close menu"
+          >
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <nav class="flex-1 space-y-1 px-3 py-4 md:px-4">
+          <a href="./admin-dashboard.html" class="sidebar-link bg-white/10 text-white ring-1 ring-white/10">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 11.25v2.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+            </svg>
             Dashboard
           </a>
-          <a href="./admin-feedback.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
-            Feedback Explorer
+          <a href="./admin-feedback.html" class="sidebar-link text-white/80 hover:bg-white/10 hover:text-white">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            Feedback explorer
           </a>
-          <a href="./admin-employees.html" class="block bg-slate-700 hover:bg-slate-800 px-3 py-2 rounded-lg">
-            Employee Insights
+          <a href="./admin-employees.html" class="sidebar-link text-white/80 hover:bg-white/10 hover:text-white">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+            </svg>
+            Employee insights
           </a>
+        </nav>
+        <div class="border-t border-white/10 p-4">
           <button
             id="logoutBtn"
-            class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg"
+            type="button"
+            class="sidebar-link w-full text-left text-red-200 hover:bg-red-500/20 hover:text-white"
           >
-            Logout
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Sign out
           </button>
-        </nav>
+        </div>
       </aside>
 
-      <main class="flex-1 p-6 md:p-10">
-        <div class="max-w-7xl mx-auto space-y-6">
+      <button
+        type="button"
+        id="sidebarOpen"
+        class="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-soft ring-1 ring-ink-900/5 md:hidden"
+        aria-label="Open menu"
+      >
+        <svg class="h-5 w-5 text-ink-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <main class="flex-1 pt-8 md:pt-0">
+        <div class="mx-auto max-w-7xl space-y-8 px-4 pb-12 pt-16 md:px-8 md:pt-10">
           <header>
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">HR Dashboard</h1>
-            <p class="text-slate-500 mt-1">Sentiment trends and latest employee feedback.</p>
+            <h1 class="font-display text-3xl font-semibold text-ink-900">HR dashboard</h1>
+            <p class="mt-1 text-slate-600">Sentiment mix, stress bands, and recent submissions.</p>
           </header>
 
-          <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Total Feedback</p>
-              <p id="totalFeedback" class="text-2xl font-bold text-slate-800">0</p>
+          <section class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Total</p>
+                  <p id="totalFeedback" class="text-2xl font-semibold tabular-nums text-ink-900">0</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Positive</p>
-              <p id="positiveCount" class="text-2xl font-bold text-green-600">0</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Positive</p>
+                  <p id="positiveCount" class="text-2xl font-semibold tabular-nums text-emerald-700">0</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Negative</p>
-              <p id="negativeCount" class="text-2xl font-bold text-red-600">0</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-700">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Negative</p>
+                  <p id="negativeCount" class="text-2xl font-semibold tabular-nums text-rose-700">0</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Neutral</p>
-              <p id="neutralCount" class="text-2xl font-bold text-yellow-600">0</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-800">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Neutral</p>
+                  <p id="neutralCount" class="text-2xl font-semibold tabular-nums text-amber-800">0</p>
+                </div>
+              </div>
             </div>
           </section>
 
-          <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white rounded-2xl shadow p-6">
-              <h2 class="text-lg font-semibold text-slate-800">Positive vs Negative vs Neutral</h2>
-              <canvas id="sentimentChart" class="mt-4"></canvas>
+          <section class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+              <h2 class="font-display text-lg font-semibold text-ink-900">Sentiment mix</h2>
+              <p class="mt-1 text-sm text-slate-500">Positive, negative, and neutral share.</p>
+              <div class="mt-4 max-h-[280px]">
+                <canvas id="sentimentChart"></canvas>
+              </div>
             </div>
-            <div class="bg-white rounded-2xl shadow p-6">
-              <h2 class="text-lg font-semibold text-slate-800">Stress distribution (model)</h2>
-              <canvas id="emotionChart" class="mt-4"></canvas>
+            <div class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+              <h2 class="font-display text-lg font-semibold text-ink-900">Stress bands</h2>
+              <p class="mt-1 text-sm text-slate-500">Derived from model mood mapping.</p>
+              <div class="mt-4 max-h-[280px]">
+                <canvas id="emotionChart"></canvas>
+              </div>
             </div>
           </section>
 
-          <section class="bg-white rounded-2xl shadow p-6">
-            <h2 class="text-lg font-semibold text-slate-800">Feedback Volume Trend (14 days)</h2>
-            <canvas id="trendChart" class="mt-4"></canvas>
+          <section class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+            <h2 class="font-display text-lg font-semibold text-ink-900">Volume (14 days)</h2>
+            <p class="mt-1 text-sm text-slate-500">Feedback submissions per day.</p>
+            <div class="mt-4 max-h-[300px]">
+              <canvas id="trendChart"></canvas>
+            </div>
           </section>
 
-          <section class="bg-white rounded-2xl shadow p-6">
-            <h2 class="text-xl font-semibold text-slate-800">Recent Feedback</h2>
-            <div class="overflow-x-auto mt-4">
-              <table class="w-full text-sm text-left border-collapse">
+          <section class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+            <h2 class="font-display text-lg font-semibold text-ink-900">Recent feedback</h2>
+            <div class="table-shell mt-4 overflow-x-auto">
+              <table class="w-full min-w-[720px] text-left text-sm">
                 <thead>
-                  <tr class="text-slate-500 border-b">
-                    <th class="py-2">Employee</th>
-                    <th class="py-2">Date</th>
-                    <th class="py-2">Language</th>
-                    <th class="py-2">Stress (model)</th>
-                    <th class="py-2">Emotion</th>
-                    <th class="py-2">Score</th>
-                    <th class="py-2">Message</th>
+                  <tr class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th class="px-4 py-3">Employee</th>
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">Language</th>
+                    <th class="px-4 py-3">Stress</th>
+                    <th class="px-4 py-3">Emotion</th>
+                    <th class="px-4 py-3">Score</th>
+                    <th class="px-4 py-3">Message</th>
                   </tr>
                 </thead>
-                <tbody id="recentTable" class="text-slate-700"></tbody>
+                <tbody id="recentTable" class="divide-y divide-slate-100 text-slate-700"></tbody>
               </table>
             </div>
           </section>
@@ -105,6 +197,26 @@
       if (!token || !user || user.role !== "admin") {
         window.location.href = "./login.html";
       }
+
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      const openBtn = document.getElementById("sidebarOpen");
+      const closeBtn = document.getElementById("sidebarClose");
+
+      const openSidebar = () => {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      };
+      const closeSidebar = () => {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
+        document.body.style.overflow = "";
+      };
+
+      openBtn.addEventListener("click", openSidebar);
+      closeBtn.addEventListener("click", closeSidebar);
+      overlay.addEventListener("click", closeSidebar);
 
       const messageBox = document.getElementById("messageBox");
       const totalFeedbackEl = document.getElementById("totalFeedback");
@@ -129,6 +241,14 @@
         return "Medium";
       };
 
+      const chartColors = {
+        positive: "#059669",
+        negative: "#e11d48",
+        neutral: "#d97706",
+        accent: "#0d9488",
+        accentSoft: "rgba(13, 148, 136, 0.15)",
+      };
+
       const renderCharts = (sentiment, moodDistribution) => {
         const sentimentCtx = document.getElementById("sentimentChart");
         const emotionCtx = document.getElementById("emotionChart");
@@ -137,16 +257,24 @@
         if (emotionChart) emotionChart.destroy();
 
         sentimentChart = new Chart(sentimentCtx, {
-          type: "pie",
+          type: "doughnut",
           data: {
             labels: ["Positive", "Negative", "Neutral"],
             datasets: [
               {
                 data: [sentiment.Positive, sentiment.Negative, sentiment.Neutral],
-                backgroundColor: ["#22c55e", "#ef4444", "#eab308"]
-              }
-            ]
-          }
+                backgroundColor: [chartColors.positive, chartColors.negative, chartColors.neutral],
+                borderWidth: 0,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            plugins: {
+              legend: { position: "bottom", labels: { usePointStyle: true, padding: 16 } },
+            },
+            cutout: "58%",
+          },
         });
 
         emotionChart = new Chart(emotionCtx, {
@@ -157,18 +285,24 @@
               {
                 label: "Count",
                 data: moodDistribution.map((item) => Number(item.count)),
-                backgroundColor: "#3b82f6"
-              }
-            ]
+                backgroundColor: chartColors.accent,
+                borderRadius: 8,
+              },
+            ],
           },
           options: {
+            plugins: { legend: { display: false } },
             scales: {
               y: {
                 beginAtZero: true,
-                ticks: { precision: 0 }
-              }
-            }
-          }
+                ticks: { precision: 0 },
+                grid: { color: "rgba(148, 163, 184, 0.2)" },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
         });
       };
 
@@ -176,15 +310,15 @@
         tableBody.innerHTML = "";
         recentFeedback.forEach((item) => {
           const row = document.createElement("tr");
-          row.className = "border-b";
+          row.className = "border-b border-slate-50";
           row.innerHTML = `
-            <td class="py-2">${item.employee_name}</td>
-            <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
-            <td class="py-2">${item.language}</td>
-            <td class="py-2">${stressBandFromMood(item.mood)}</td>
-            <td class="py-2">${item.emotion_label}</td>
-            <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
-            <td class="py-2">${item.message}</td>
+            <td class="whitespace-nowrap px-4 py-3 font-medium text-ink-900">${item.employee_name}</td>
+            <td class="whitespace-nowrap px-4 py-3 text-slate-600">${new Date(item.created_at).toLocaleString()}</td>
+            <td class="px-4 py-3">${item.language}</td>
+            <td class="px-4 py-3">${stressBandFromMood(item.mood)}</td>
+            <td class="px-4 py-3">${item.emotion_label}</td>
+            <td class="px-4 py-3 tabular-nums">${Number(item.sentiment_score).toFixed(2)}</td>
+            <td class="max-w-xs truncate px-4 py-3" title="${item.message.replace(/"/g, "&quot;")}">${item.message}</td>
           `;
           tableBody.appendChild(row);
         });
@@ -199,23 +333,31 @@
             labels: trendData.map((item) => item.day),
             datasets: [
               {
-                label: "Feedback Count",
+                label: "Feedback count",
                 data: trendData.map((item) => Number(item.count)),
-                borderColor: "#2563eb",
-                backgroundColor: "rgba(37, 99, 235, 0.12)",
+                borderColor: chartColors.accent,
+                backgroundColor: chartColors.accentSoft,
                 tension: 0.35,
-                fill: true
-              }
-            ]
+                fill: true,
+                borderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+              },
+            ],
           },
           options: {
+            plugins: { legend: { display: false } },
             scales: {
               y: {
                 beginAtZero: true,
-                ticks: { precision: 0 }
-              }
-            }
-          }
+                ticks: { precision: 0 },
+                grid: { color: "rgba(148, 163, 184, 0.2)" },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
         });
       };
 
@@ -223,11 +365,11 @@
         try {
           const [dashboardResponse, trendResponse] = await Promise.all([
             fetch(`${API_BASE}/admin/dashboard`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { Authorization: `Bearer ${token}` },
             }),
             fetch(`${API_BASE}/admin/trend?days=14`, {
-              headers: { Authorization: `Bearer ${token}` }
-            })
+              headers: { Authorization: `Bearer ${token}` },
+            }),
           ]);
 
           const dashboardData = await dashboardResponse.json();
@@ -249,7 +391,7 @@
           renderRecentTable(dashboardData.recentFeedback);
         } catch (error) {
           messageBox.textContent = error.message;
-          messageBox.className = "text-sm text-red-600";
+          messageBox.className = "rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100";
         }
       };
 

@@ -2,7 +2,8 @@ import express from "express";
 import {
   getMyFeedback,
   getMyFeedbackSummary,
-  submitFeedback
+  submitFeedback,
+  submitVoiceFeedback
 } from "../controllers/feedbackController.js";
 import { authenticateToken } from "../middleware/authMiddleware.js";
 import { authorizeRoles } from "../middleware/roleMiddleware.js";
@@ -16,6 +17,14 @@ router.post(
   authorizeRoles("employee"),
   uploadAudio.single("audio"),
   submitFeedback
+);
+
+router.post(
+  "/voice",
+  authenticateToken,
+  authorizeRoles("employee"),
+  uploadAudio.single("audio"),
+  submitVoiceFeedback
 );
 
 router.get("/my", authenticateToken, authorizeRoles("employee"), getMyFeedback);

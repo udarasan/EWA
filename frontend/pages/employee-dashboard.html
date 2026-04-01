@@ -4,68 +4,217 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentiSphere AI | Employee Dashboard</title>
+    <link rel="stylesheet" href="../css/app.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/tailwind-config.js"></script>
   </head>
-  <body class="bg-slate-100 min-h-screen">
-    <div class="flex min-h-screen">
-      <aside class="w-72 bg-slate-900 text-white p-6 hidden md:block">
-        <h2 class="text-xl font-bold">SentiSphere AI</h2>
-        <p class="text-slate-400 text-sm mt-1">Employee Panel</p>
-        <nav class="mt-8 space-y-3">
-          <a href="#" class="block bg-slate-800 px-3 py-2 rounded-lg">Submit Feedback</a>
-          <button
-            id="logoutBtn"
-            class="w-full text-left bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg"
-          >
-            Logout
-          </button>
-        </nav>
-      </aside>
+  <body class="bg-grain min-h-screen font-sans text-ink-900 bg-mesh bg-ink-50 antialiased">
+    <div id="sidebarOverlay" class="fixed inset-0 z-40 bg-ink-950/50 backdrop-blur-sm hidden md:hidden" aria-hidden="true"></div>
 
-      <main class="flex-1 p-6 md:p-10">
-        <div class="max-w-5xl mx-auto space-y-6">
-          <header>
-            <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Employee Feedback</h1>
-            <p class="text-slate-500 mt-1">Share your experience with optional audio.</p>
+    <div class="flex min-h-screen w-full">
+    <aside
+      id="sidebar"
+      class="fixed left-0 top-0 z-50 flex h-full w-full max-w-[18rem] -translate-x-full flex-col border-r border-white/10 bg-gradient-to-b from-ink-950 to-ink-900 text-white shadow-2xl transition-transform duration-200 ease-out md:static md:z-0 md:max-w-none md:w-72 md:translate-x-0 md:shadow-none md:border-r-0"
+    >
+      <div class="flex h-16 items-center justify-between border-b border-white/10 px-5 md:h-auto md:border-0 md:px-6 md:pt-8">
+        <div>
+          <p class="font-display text-lg font-semibold tracking-tight">SentiSphere</p>
+          <p class="text-xs text-white/50">Employee</p>
+        </div>
+        <button
+          type="button"
+          id="sidebarClose"
+          class="rounded-lg p-2 text-white/70 hover:bg-white/10 md:hidden"
+          aria-label="Close menu"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <nav class="flex-1 space-y-1 px-3 py-4 md:px-4">
+        <span
+          class="sidebar-link bg-white/10 text-white ring-1 ring-white/10"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Submit feedback
+        </span>
+      </nav>
+      <div class="border-t border-white/10 p-4">
+        <button
+          id="logoutBtn"
+          type="button"
+          class="sidebar-link w-full text-left text-red-200 hover:bg-red-500/20 hover:text-white"
+        >
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Sign out
+        </button>
+      </div>
+    </aside>
+
+      <button
+        type="button"
+        id="sidebarOpen"
+        class="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-white shadow-soft ring-1 ring-ink-900/5 md:hidden"
+        aria-label="Open menu"
+      >
+        <svg class="h-5 w-5 text-ink-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+
+      <main class="flex-1 pt-8 md:pt-0">
+        <div class="mx-auto max-w-5xl space-y-8 px-4 pb-12 pt-16 md:px-8 md:pt-10">
+          <header class="md:pl-0">
+            <h1 class="font-display text-3xl font-semibold text-ink-900">Your feedback</h1>
+            <p class="mt-1 text-slate-600">Share how you’re doing — optional audio, multilingual text.</p>
           </header>
 
-          <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Total Submitted</p>
-              <p id="totalCount" class="text-2xl font-bold text-slate-800">0</p>
+          <section class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Submitted</p>
+                  <p id="totalCount" class="text-2xl font-semibold tabular-nums text-ink-900">0</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Average Sentiment</p>
-              <p id="avgSentiment" class="text-2xl font-bold text-blue-600">0.00</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Avg sentiment</p>
+                  <p id="avgSentiment" class="text-2xl font-semibold tabular-nums text-brand-700">0.00</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Positive</p>
-              <p id="positiveCount" class="text-2xl font-bold text-green-600">0</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75l9-6.75z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Positive</p>
+                  <p id="positiveCount" class="text-2xl font-semibold tabular-nums text-emerald-700">0</p>
+                </div>
+              </div>
             </div>
-            <div class="bg-white rounded-xl shadow px-5 py-4">
-              <p class="text-sm text-slate-500">Negative</p>
-              <p id="negativeCount" class="text-2xl font-bold text-red-600">0</p>
+            <div class="rounded-2xl bg-white p-4 shadow-soft ring-1 ring-ink-900/5 md:p-5">
+              <div class="flex items-center gap-3">
+                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-700">
+                  <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                </span>
+                <div>
+                  <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Negative</p>
+                  <p id="negativeCount" class="text-2xl font-semibold tabular-nums text-rose-700">0</p>
+                </div>
+              </div>
             </div>
           </section>
 
-          <section class="bg-white rounded-2xl shadow p-6">
-            <form id="feedbackForm" class="space-y-4" enctype="multipart/form-data">
+          <section class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+            <h2 class="font-display text-lg font-semibold text-ink-900">Voice check-in</h2>
+            <p class="mt-1 text-sm text-slate-500">
+              Live captions use the browser
+              <span class="font-medium text-slate-600">Web Speech API</span> (Chrome / Edge). Audio is sent to the backend; if captions are empty, the model transcribes the recording.
+            </p>
+            <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label class="block text-sm font-medium text-slate-700">Message</label>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="voiceLanguage"
+                  >Language</label
+                >
+                <select
+                  id="voiceLanguage"
+                  class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                >
+                  <option>Sinhala</option>
+                  <option>Tamil</option>
+                  <option selected>English</option>
+                </select>
+              </div>
+              <div class="flex flex-wrap items-end gap-2">
+                <button
+                  type="button"
+                  id="voiceStartBtn"
+                  class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-ink-900 px-4 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-ink-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 min-w-[8rem]"
+                >
+                  <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                  </svg>
+                  Start
+                </button>
+                <button
+                  type="button"
+                  id="voiceStopBtn"
+                  disabled
+                  class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 min-w-[8rem]"
+                >
+                  Stop
+                </button>
+              </div>
+            </div>
+            <div
+              id="voiceLive"
+              class="mt-4 min-h-[5rem] rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700"
+              aria-live="polite"
+            >
+              <span class="text-slate-400">Live transcript appears here…</span>
+            </div>
+            <div class="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                id="voiceSubmitBtn"
+                disabled
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Save voice check-in
+              </button>
+              <p id="voiceStatus" class="self-center text-xs text-slate-500"></p>
+            </div>
+          </section>
+
+          <section class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+            <h2 class="font-display text-lg font-semibold text-ink-900">New submission</h2>
+            <p class="mt-1 text-sm text-slate-500">Stress and emotion are inferred automatically from your message.</p>
+            <form id="feedbackForm" class="mt-6 space-y-5" enctype="multipart/form-data">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="message"
+                  >Message</label
+                >
                 <textarea
                   id="message"
                   rows="4"
                   required
-                  class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  placeholder="How has work felt lately?"
                 ></textarea>
               </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                  <label class="block text-sm font-medium text-slate-700">Language</label>
+                  <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="language"
+                    >Language</label
+                  >
                   <select
                     id="language"
-                    class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                   >
                     <option>Sinhala</option>
                     <option>Tamil</option>
@@ -73,45 +222,42 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block text-sm font-medium text-slate-700">Audio (optional)</label>
+                  <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="audio"
+                    >Audio (optional)</label
+                  >
                   <input
                     id="audio"
                     type="file"
                     accept="audio/*"
-                    class="w-full mt-1 text-sm rounded-lg border border-slate-300 px-3 py-2"
+                    class="mt-1.5 w-full rounded-xl border border-dashed border-slate-200 bg-slate-50/50 px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-600 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-700"
                   />
                 </div>
               </div>
-              <p class="text-sm text-slate-500">
-                Stress score and emotion are inferred from your message by the analysis model (no manual mood
-                selection).
-              </p>
-
               <button
                 type="submit"
-                class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-5 py-2.5 font-medium"
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
               >
-                Submit Feedback
+                Submit feedback
               </button>
             </form>
-            <div id="messageBox" class="mt-4 text-sm"></div>
+            <div id="messageBox" class="mt-4 hidden rounded-lg px-3 py-2 text-sm" role="status"></div>
           </section>
 
-          <section class="bg-white rounded-2xl shadow p-6">
-            <h2 class="text-xl font-semibold text-slate-800">My Feedback History</h2>
-            <div class="overflow-x-auto mt-4">
-              <table class="w-full text-sm text-left border-collapse">
+          <section class="rounded-2xl bg-white p-6 shadow-card ring-1 ring-ink-900/5 md:p-8">
+            <h2 class="font-display text-lg font-semibold text-ink-900">History</h2>
+            <div class="table-shell mt-4 overflow-x-auto">
+              <table class="w-full min-w-[640px] text-left text-sm">
                 <thead>
-                  <tr class="text-slate-500 border-b">
-                    <th class="py-2">Date</th>
-                    <th class="py-2">Language</th>
-                    <th class="py-2">Stress (model)</th>
-                    <th class="py-2">Emotion</th>
-                    <th class="py-2">Score</th>
-                    <th class="py-2">Message</th>
+                  <tr class="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <th class="px-4 py-3">Date</th>
+                    <th class="px-4 py-3">Language</th>
+                    <th class="px-4 py-3">Stress</th>
+                    <th class="px-4 py-3">Emotion</th>
+                    <th class="px-4 py-3">Score</th>
+                    <th class="px-4 py-3">Message</th>
                   </tr>
                 </thead>
-                <tbody id="feedbackTable" class="text-slate-700"></tbody>
+                <tbody id="feedbackTable" class="divide-y divide-slate-100 text-slate-700"></tbody>
               </table>
             </div>
           </section>
@@ -128,6 +274,26 @@
         window.location.href = "./login.html";
       }
 
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      const openBtn = document.getElementById("sidebarOpen");
+      const closeBtn = document.getElementById("sidebarClose");
+
+      const openSidebar = () => {
+        sidebar.classList.remove("-translate-x-full");
+        overlay.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      };
+      const closeSidebar = () => {
+        sidebar.classList.add("-translate-x-full");
+        overlay.classList.add("hidden");
+        document.body.style.overflow = "";
+      };
+
+      openBtn.addEventListener("click", openSidebar);
+      closeBtn.addEventListener("click", closeSidebar);
+      overlay.addEventListener("click", closeSidebar);
+
       const feedbackForm = document.getElementById("feedbackForm");
       const tableBody = document.getElementById("feedbackTable");
       const messageBox = document.getElementById("messageBox");
@@ -136,6 +302,147 @@
       const avgSentimentEl = document.getElementById("avgSentiment");
       const positiveCountEl = document.getElementById("positiveCount");
       const negativeCountEl = document.getElementById("negativeCount");
+
+      const voiceLangMap = { English: "en-US", Sinhala: "si-LK", Tamil: "ta-IN" };
+      const voiceStartBtn = document.getElementById("voiceStartBtn");
+      const voiceStopBtn = document.getElementById("voiceStopBtn");
+      const voiceSubmitBtn = document.getElementById("voiceSubmitBtn");
+      const voiceLive = document.getElementById("voiceLive");
+      const voiceLanguageEl = document.getElementById("voiceLanguage");
+      const voiceStatus = document.getElementById("voiceStatus");
+
+      let voiceChunks = [];
+      let voiceMediaRecorder = null;
+      let voiceStream = null;
+      let voiceRecognition = null;
+      let voiceTranscriptFinal = "";
+      let voiceFinalBlob = null;
+
+      voiceStartBtn.addEventListener("click", async () => {
+        voiceStatus.textContent = "";
+        voiceFinalBlob = null;
+        voiceTranscriptFinal = "";
+        voiceChunks = [];
+        voiceLive.innerHTML = '<span class="text-slate-400">Listening…</span>';
+        try {
+          voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch {
+          voiceStatus.textContent = "Microphone permission denied or unavailable.";
+          return;
+        }
+        const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+          ? "audio/webm;codecs=opus"
+          : MediaRecorder.isTypeSupported("audio/webm")
+            ? "audio/webm"
+            : "";
+        voiceMediaRecorder = mime
+          ? new MediaRecorder(voiceStream, { mimeType: mime })
+          : new MediaRecorder(voiceStream);
+        voiceMediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size) voiceChunks.push(e.data);
+        };
+        voiceMediaRecorder.onstop = () => {
+          if (voiceStream) {
+            voiceStream.getTracks().forEach((t) => t.stop());
+            voiceStream = null;
+          }
+          const rec = voiceMediaRecorder;
+          const type = rec && rec.mimeType ? rec.mimeType : "audio/webm";
+          voiceFinalBlob = new Blob(voiceChunks, { type });
+          voiceMediaRecorder = null;
+          voiceSubmitBtn.disabled = false;
+          voiceStatus.textContent = "Ready to save.";
+        };
+
+        voiceMediaRecorder.start(400);
+
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SR) {
+          voiceRecognition = new SR();
+          voiceRecognition.continuous = true;
+          voiceRecognition.interimResults = true;
+          voiceRecognition.lang = voiceLangMap[voiceLanguageEl.value] || "en-US";
+          voiceRecognition.onresult = (event) => {
+            let interim = "";
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              const t = event.results[i][0].transcript;
+              if (event.results[i].isFinal) voiceTranscriptFinal += t;
+              else interim += t;
+            }
+            const combined = (voiceTranscriptFinal + interim).trim();
+            voiceLive.textContent = combined || "…";
+          };
+          voiceRecognition.onerror = () => {
+            voiceLive.textContent =
+              (voiceTranscriptFinal || "").trim() ||
+              "Speech recognition had an error; audio will still be sent for transcription.";
+          };
+          try {
+            voiceRecognition.start();
+          } catch {
+            voiceLive.textContent =
+              "Could not start speech recognition. Audio will still be sent for transcription.";
+          }
+        } else {
+          voiceLive.textContent =
+            "This browser does not support live captions. Audio will be transcribed on the server.";
+        }
+
+        voiceStartBtn.disabled = true;
+        voiceStopBtn.disabled = false;
+        voiceSubmitBtn.disabled = true;
+      });
+
+      voiceStopBtn.addEventListener("click", () => {
+        if (voiceRecognition) {
+          try {
+            voiceRecognition.stop();
+          } catch {
+            /* ignore */
+          }
+          voiceRecognition = null;
+        }
+        if (voiceMediaRecorder && voiceMediaRecorder.state !== "inactive") {
+          voiceMediaRecorder.stop();
+        } else if (voiceStream) {
+          voiceStream.getTracks().forEach((t) => t.stop());
+          voiceStream = null;
+          voiceMediaRecorder = null;
+        }
+        voiceStartBtn.disabled = false;
+        voiceStopBtn.disabled = true;
+      });
+
+      voiceSubmitBtn.addEventListener("click", async () => {
+        if (!voiceFinalBlob) {
+          voiceStatus.textContent = "Record audio first.";
+          return;
+        }
+        voiceStatus.textContent = "Uploading…";
+        const fd = new FormData();
+        fd.append("audio", voiceFinalBlob, "voice.webm");
+        fd.append("language", voiceLanguageEl.value);
+        fd.append("transcript", voiceTranscriptFinal.trim());
+        try {
+          const response = await fetch(`${API_BASE}/feedback/voice`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: fd,
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to save voice check-in.");
+          }
+          voiceStatus.textContent = `Saved. Stress: ${data.feedback.mood}, mood ${data.feedback.emotionLabel}.`;
+          voiceFinalBlob = null;
+          voiceSubmitBtn.disabled = true;
+          voiceTranscriptFinal = "";
+          voiceLive.innerHTML = '<span class="text-slate-400">Live transcript appears here…</span>';
+          loadMyFeedback();
+        } catch (error) {
+          voiceStatus.textContent = error.message;
+        }
+      });
 
       logoutBtn.addEventListener("click", () => {
         localStorage.clear();
@@ -152,11 +459,11 @@
         try {
           const [feedbackResponse, summaryResponse] = await Promise.all([
             fetch(`${API_BASE}/feedback/my`, {
-              headers: { Authorization: `Bearer ${token}` }
+              headers: { Authorization: `Bearer ${token}` },
             }),
             fetch(`${API_BASE}/feedback/my/summary`, {
-              headers: { Authorization: `Bearer ${token}` }
-            })
+              headers: { Authorization: `Bearer ${token}` },
+            }),
           ]);
 
           const data = await feedbackResponse.json();
@@ -176,26 +483,27 @@
           tableBody.innerHTML = "";
           data.feedback.forEach((item) => {
             const row = document.createElement("tr");
-            row.className = "border-b";
+            row.className = "border-b border-slate-50";
             row.innerHTML = `
-              <td class="py-2">${new Date(item.created_at).toLocaleString()}</td>
-              <td class="py-2">${item.language}</td>
-              <td class="py-2">${stressBandFromMood(item.mood)}</td>
-              <td class="py-2">${item.emotion_label}</td>
-              <td class="py-2">${Number(item.sentiment_score).toFixed(2)}</td>
-              <td class="py-2">${item.message}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-slate-600">${new Date(item.created_at).toLocaleString()}</td>
+              <td class="px-4 py-3">${item.language}</td>
+              <td class="px-4 py-3">${stressBandFromMood(item.mood)}</td>
+              <td class="px-4 py-3">${item.emotion_label}</td>
+              <td class="px-4 py-3 tabular-nums">${Number(item.sentiment_score).toFixed(2)}</td>
+              <td class="max-w-xs truncate px-4 py-3" title="${item.message.replace(/"/g, "&quot;")}">${item.message}</td>
             `;
             tableBody.appendChild(row);
           });
         } catch (error) {
           messageBox.textContent = error.message;
-          messageBox.className = "mt-4 text-sm text-red-600";
+          messageBox.className = "mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100";
         }
       };
 
       feedbackForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         messageBox.textContent = "";
+        messageBox.className = "mt-4 hidden rounded-lg px-3 py-2 text-sm";
 
         const formData = new FormData();
         formData.append("message", document.getElementById("message").value.trim());
@@ -210,7 +518,7 @@
           const response = await fetch(`${API_BASE}/feedback`, {
             method: "POST",
             headers: { Authorization: `Bearer ${token}` },
-            body: formData
+            body: formData,
           });
           const data = await response.json();
           if (!response.ok) {
@@ -218,12 +526,12 @@
           }
 
           messageBox.textContent = `Submitted. Emotion: ${data.feedback.emotionLabel}, Score: ${data.feedback.sentimentScore}`;
-          messageBox.className = "mt-4 text-sm text-green-600";
+          messageBox.className = "mt-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-100";
           feedbackForm.reset();
           loadMyFeedback();
         } catch (error) {
           messageBox.textContent = error.message;
-          messageBox.className = "mt-4 text-sm text-red-600";
+          messageBox.className = "mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100";
         }
       });
 

@@ -6,14 +6,14 @@
 const normalizeBaseUrl = (url) => String(url || "").trim().replace(/\/$/, "");
 
 /** Maps API stress_level text to DB mood ENUM (legacy column, used in admin charts). */
-const stressLevelToMood = (stressLevel) => {
+export const stressLevelToMood = (stressLevel) => {
   const s = String(stressLevel || "").toLowerCase();
   if (s.includes("low")) return "Happy";
   if (s.includes("high")) return "Stressed";
   return "Neutral";
 };
 
-const mapApiPayloadToSentiment = (data) => {
+export const mapApiPayloadToSentiment = (data) => {
   if (!data || typeof data !== "object") return null;
   const stressScore = Number(data.stress_score);
   if (Number.isNaN(stressScore)) return null;
@@ -31,6 +31,94 @@ const mapApiPayloadToSentiment = (data) => {
     stressLevel: String(data.stress_level || "")
   };
 };
+
+/**
+ * @param {string} filePath absolute path on disk
+ * @param {string} originalName filename for multipart
+ * @param {string} [language] Sinhala | Tamil | English
+ */
+export async function transcribeAudioFile(filePath, originalName, language) {
+  const base = normalizeBaseUrl(process.env.STRESS_API_URL);
+  if (!base) {
+    throw new Error(
+      "Transcription is not configured. Set STRESS_API_URL in the server environment."
+    );
+  }
+
+  const { readFile } = await import("fs/promises");
+  const buf = await readFile(filePath);
+  const blob = new Blob([buf]);
+  const form = new FormData();
+  form.append("file", blob, originalName || "recording.webm");
+  if (language) form.append("language", language);
+
+  const timeoutMs = Number(process.env.STRESS_API_TIMEOUT_MS) || 120000;
+  const url = `${base}/transcribe`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body: form,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(errText || `Transcription failed (${res.status})`);
+    }
+    const data = await res.json();
+    const text = data && typeof data.text === "string" ? data.text.trim() : "";
+    if (!text) {
+      throw new Error("Transcription returned empty text.");
+    }
+    return text;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * One round-trip: transcribe + stress from the model API.
+ * @param {string} filePath
+ * @param {string} originalName
+ * @param {string} [language]
+ */
+export async function voiceAndStressFromFile(filePath, originalName, language) {
+  const base = normalizeBaseUrl(process.env.STRESS_API_URL);
+  if (!base) {
+    throw new Error(
+      "Voice analysis is not configured. Set STRESS_API_URL in the server environment."
+    );
+  }
+
+  const { readFile } = await import("fs/promises");
+  const buf = await readFile(filePath);
+  const blob = new Blob([buf]);
+  const form = new FormData();
+  form.append("file", blob, originalName || "recording.webm");
+  if (language) form.append("language", language);
+
+  const timeoutMs = Number(process.env.STRESS_API_TIMEOUT_MS) || 120000;
+  const url = `${base}/voice-and-stress`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body: form,
+      signal: controller.signal
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(errText || `Voice analysis failed (${res.status})`);
+    }
+    return await res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function fetchStressAnalysis(message) {
   const base = normalizeBaseUrl(process.env.STRESS_API_URL);

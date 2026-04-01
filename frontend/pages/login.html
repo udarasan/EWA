@@ -4,46 +4,95 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SentiSphere AI | Login</title>
+    <link rel="stylesheet" href="../css/app.css" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="../js/tailwind-config.js"></script>
   </head>
-  <body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
-      <h1 class="text-2xl font-bold text-slate-800">SentiSphere AI</h1>
-      <p class="text-sm text-slate-500 mt-1">Employee Feedback Sentiment System</p>
-
-      <form id="loginForm" class="mt-6 space-y-4">
+  <body
+    class="bg-grain min-h-screen font-sans text-ink-900 bg-mesh bg-ink-50 antialiased"
+  >
+    <div class="relative z-10 min-h-screen flex flex-col lg:flex-row">
+      <div
+        class="lg:w-[42%] xl:w-[44%] bg-gradient-to-br from-ink-950 via-brand-900 to-brand-800 text-white p-10 lg:p-14 flex flex-col justify-between min-h-[220px] lg:min-h-screen"
+      >
         <div>
-          <label class="block text-sm font-medium text-slate-700">Email</label>
-          <input
-            id="email"
-            type="email"
-            required
-            class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+          <div class="flex items-center gap-3">
+            <div
+              class="h-11 w-11 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center ring-1 ring-white/20"
+            >
+              <svg class="h-6 w-6 text-brand-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.75"
+                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="font-display text-xl font-semibold tracking-tight">SentiSphere</p>
+              <p class="text-xs text-white/60 uppercase tracking-widest">Workplace intelligence</p>
+            </div>
+          </div>
+          <h1 class="mt-10 lg:mt-16 font-display text-3xl lg:text-4xl font-semibold leading-tight max-w-md">
+            Understand how your team really feels.
+          </h1>
+          <p class="mt-4 text-sm text-white/75 max-w-sm leading-relaxed">
+            Secure feedback, sentiment signals, and HR insights in one calm workspace.
+          </p>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-700">Password</label>
-          <input
-            id="password"
-            type="password"
-            required
-            class="w-full mt-1 rounded-lg border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          />
+        <p class="hidden lg:block text-xs text-white/40">Employee Feedback Sentiment System</p>
+      </div>
+
+      <div class="flex-1 flex items-center justify-center p-6 md:p-10 lg:p-14">
+        <div class="w-full max-w-md">
+          <div class="rounded-2xl bg-white/90 backdrop-blur-sm shadow-card ring-1 ring-ink-900/5 p-8 md:p-10">
+            <h2 class="font-display text-2xl font-semibold text-ink-900">Welcome back</h2>
+            <p class="mt-1 text-sm text-slate-500">Sign in to continue to your dashboard.</p>
+
+            <form id="loginForm" class="mt-8 space-y-5">
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="email"
+                  >Email</label
+                >
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  autocomplete="email"
+                  class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  placeholder="you@company.com"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold uppercase tracking-wide text-slate-500" for="password"
+                  >Password</label
+                >
+                <input
+                  id="password"
+                  type="password"
+                  required
+                  autocomplete="current-password"
+                  class="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                />
+              </div>
+              <button
+                type="submit"
+                class="w-full rounded-xl bg-brand-600 py-3.5 text-sm font-semibold text-white shadow-soft transition hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2"
+              >
+                Sign in
+              </button>
+            </form>
+
+            <p class="mt-6 text-center text-sm text-slate-600">
+              New here?
+              <a href="./register.html" class="font-semibold text-brand-700 hover:text-brand-800">Create an account</a>
+            </p>
+
+            <div id="message" class="mt-4 rounded-lg px-3 py-2 text-sm hidden" role="status"></div>
+          </div>
         </div>
-        <button
-          type="submit"
-          class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 font-medium"
-        >
-          Login
-        </button>
-      </form>
-
-      <p class="text-sm text-slate-600 mt-4">
-        New here?
-        <a href="./register.html" class="text-blue-600 font-medium">Create account</a>
-      </p>
-
-      <div id="message" class="mt-4 text-sm"></div>
+      </div>
     </div>
 
     <script>
@@ -54,17 +103,18 @@
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         messageBox.textContent = "";
+        messageBox.className = "mt-4 rounded-lg px-3 py-2 text-sm hidden";
 
         const payload = {
           email: document.getElementById("email").value.trim(),
-          password: document.getElementById("password").value
+          password: document.getElementById("password").value,
         };
 
         try {
           const response = await fetch(`${API_BASE}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
           });
           const data = await response.json();
 
@@ -82,7 +132,7 @@
           }
         } catch (error) {
           messageBox.textContent = error.message;
-          messageBox.className = "mt-4 text-sm text-red-600";
+          messageBox.className = "mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-100";
         }
       });
     </script>
