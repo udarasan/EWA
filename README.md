@@ -4,7 +4,7 @@ Production-ready prototype for a final-year project using:
 
 - Backend: Node.js + Express (ES modules)
 - Database: MySQL
-- Frontend: HTML + TailwindCSS + Chart.js
+- Frontend: React + TypeScript + Vite + TailwindCSS + Recharts
 - Auth: JWT + bcrypt
 - Architecture: Clean MVC + REST APIs
 
@@ -23,8 +23,9 @@ backend/
   seeders/
   server.js
 frontend/
-  components/
-  pages/
+  src/
+  public/
+  package.json
 database/
   schema.sql
 model/
@@ -121,12 +122,17 @@ Seeded users:
 - Additional employees: `*@sentisphere.com` using password `Employee@123`
 
 ## Step E: Open Frontend
-Use any static server from project root, for example:
+Run the React frontend:
 
-- `npx serve frontend`
+```bash
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
+```
 
 Then open:
-- `http://localhost:3000/pages/login.html` (or the port shown by your static server)
+- `http://localhost:3000/login`
 
 ---
 
@@ -202,14 +208,16 @@ Default API base: `http://localhost:3001/api` (set `PORT` in `.env` if you chang
 
 ### Step E — Frontend
 
-From the **repository root** (`EWA`):
+From a new terminal:
 
 ```powershell
-cd path\to\EWA
-npx serve frontend
+cd path\to\EWA\frontend
+npm install
+Copy-Item .env.example .env
+npm run dev
 ```
 
-Open the URL shown in the terminal (often `http://localhost:3000`) and go to **`/pages/login.html`**.
+Open `http://localhost:3000/login`.
 
 ### Step F — Seed data (optional)
 
@@ -261,11 +269,11 @@ If the URL is missing or the model call fails, the API responds with **503** and
 
 Add screenshots in your report using these labels:
 
-1. `Login Page` – `frontend/pages/login.html`
-2. `Employee Feedback Form` – `frontend/pages/employee-dashboard.html`
-3. `Admin HR Dashboard` – `frontend/pages/admin-dashboard.html`
-4. `Admin Feedback Explorer` – `frontend/pages/admin-feedback.html`
-5. `Admin Employee Insights` – `frontend/pages/admin-employees.html`
+1. `Login Page` – `http://localhost:3000/login`
+2. `Employee Feedback Form` – `http://localhost:3000/employee`
+3. `Admin HR Dashboard` – `http://localhost:3000/admin`
+4. `Admin Feedback Explorer` – `http://localhost:3000/admin/feedback`
+5. `Admin Employee Insights` – `http://localhost:3000/admin/employees`
 6. `Database Tables (MySQL Workbench)` – `users` + `feedback`
 7. `API Testing (Postman)` – auth + feedback + admin endpoints
 

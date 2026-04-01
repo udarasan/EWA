@@ -1,0 +1,58 @@
+@import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #F9F8F6;
+  --color-surface: #FFFFFF;
+  --color-border: #EBEBEB;
+  --color-ink: #1A1A1A;
+  --color-muted: #6B7280;
+  --color-calm: #34C78A;
+  --color-calm-soft: #E8FAF3;
+  --color-moderate: #F59E0B;
+  --color-moderate-soft: #FEF3C7;
+  --color-stressed: #F87171;
+  --color-stressed-soft: #FEE2E2;
+  --color-accent: #6366F1;
+  --color-accent-soft: #EEF2FF;
+}
+
+:root {
+  --color-bg: #F9F8F6;
+  --color-text-primary: #1A1A1A;
+  --color-text-muted: #6B7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: "Nunito", sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+@keyframes wave {
+  from { transform: scaleY(0.3); }
+  to   { transform: scaleY(1.1); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
