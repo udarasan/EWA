@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListFilter, LogOut, MessageSquareText, Users } from "lucide-react";
+import { Bell, LayoutDashboard, ListFilter, LogOut, MessageSquareText, Users } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import type { Role } from "../../lib/api/types";
 import { cn } from "../../lib/utils";
@@ -47,6 +47,10 @@ export function AppSidebar({ role, onLogout, onNavigate }: AppSidebarProps) {
             <NavLink to="/admin/employees" onClick={onNavigate} className={navLinkClass}>
               <Users aria-hidden="true" className="h-5 w-5 shrink-0" />
               Employee insights
+            </NavLink>
+            <NavLink to="/admin/alerts" onClick={onNavigate} className={navLinkClass}>
+              <Bell aria-hidden="true" className="h-5 w-5 shrink-0" />
+              Alerts
             </NavLink>
           </>
         )}

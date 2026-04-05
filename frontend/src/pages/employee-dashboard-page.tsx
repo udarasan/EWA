@@ -1,5 +1,16 @@
-import { Mic, MicOff, RefreshCw, Send } from "lucide-react";
+import { Mic, MicOff, RefreshCw, Send, TrendingDown, TrendingUp, Wind } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { BreathingExercise } from "../components/employee/breathing-exercise";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -26,6 +37,43 @@ const wellnessTips = [
   { emoji: "🎵", text: "Calm music at 60 BPM can synchronize your heart rate and reduce anxiety." },
 ];
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getStreak(items: FeedbackItem[]): number {
+  if (items.length === 0) return 0;
+  const days = new Set(items.map((i) => new Date(i.created_at).toDateString()));
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    if (days.has(d.toDateString())) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function buildTrendData(items: FeedbackItem[]) {
+  const map = new Map<string, number[]>();
+  items.forEach((item) => {
+    const key = new Date(item.created_at).toLocaleDateString("en-US", {
+      month: "numeric",
+      day: "numeric",
+    });
+    const score = Math.round((1 - Number(item.sentiment_score || 0)) * 100);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(score);
+  });
+  return [...map.entries()]
+    .map(([day, scores]) => ({
+      day,
+      stress: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+    }))
+    .slice(-14);
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
 function StressGauge({ score, active }: { score: number; active: boolean }) {
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
@@ -33,60 +81,24 @@ function StressGauge({ score, active }: { score: number; active: boolean }) {
 
   let color = "#34C78A";
   let label = "You're calm";
-  if (score > 66) {
-    color = "#F87171";
-    label = "High stress detected";
-  } else if (score > 33) {
-    color = "#F59E0B";
-    label = "Feeling tense?";
-  }
+  if (score > 66) { color = "#F87171"; label = "High stress detected"; }
+  else if (score > 33) { color = "#F59E0B"; label = "Feeling tense?"; }
 
   return (
     <div className="flex flex-col items-center">
       <div className="relative">
-        <svg
-          width="200"
-          height="200"
-          viewBox="0 0 200 200"
-          aria-label={`Stress level: ${score} out of 100`}
-          role="img"
-        >
+        <svg width="200" height="200" viewBox="0 0 200 200" aria-label={`Stress level: ${score} out of 100`} role="img">
           <circle cx="100" cy="100" r={radius} fill="none" stroke="#EBEBEB" strokeWidth="16" />
           <circle
-            cx="100"
-            cy="100"
-            r={radius}
-            fill="none"
-            stroke={color}
-            strokeWidth="16"
+            cx="100" cy="100" r={radius}
+            fill="none" stroke={color} strokeWidth="16"
             strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
+            strokeDasharray={circumference} strokeDashoffset={offset}
             transform="rotate(-90 100 100)"
             style={{ transition: "stroke-dashoffset 600ms ease, stroke 600ms ease" }}
           />
-          <text
-            x="100"
-            y="92"
-            textAnchor="middle"
-            dy="0.3em"
-            fontSize="40"
-            fontWeight="700"
-            fill="#1A1A1A"
-            fontFamily="Nunito, sans-serif"
-          >
-            {score}
-          </text>
-          <text
-            x="100"
-            y="122"
-            textAnchor="middle"
-            fontSize="13"
-            fill="#6B7280"
-            fontFamily="Nunito, sans-serif"
-          >
-            stress score
-          </text>
+          <text x="100" y="92" textAnchor="middle" dy="0.3em" fontSize="40" fontWeight="700" fill="#1A1A1A" fontFamily="Nunito, sans-serif">{score}</text>
+          <text x="100" y="122" textAnchor="middle" fontSize="13" fill="#6B7280" fontFamily="Nunito, sans-serif">stress score</text>
         </svg>
         {active && (
           <span
@@ -96,9 +108,7 @@ function StressGauge({ score, active }: { score: number; active: boolean }) {
           />
         )}
       </div>
-      <p className="mt-3 text-sm font-semibold" style={{ color }}>
-        {label}
-      </p>
+      <p className="mt-3 text-sm font-semibold" style={{ color }}>{label}</p>
     </div>
   );
 }
@@ -116,9 +126,7 @@ function Waveform({ active }: { active: boolean }) {
             height: active ? `${h * 2.4}px` : "4px",
             backgroundColor: active ? "#34C78A" : "#EBEBEB",
             transition: `height 300ms ease ${i * 30}ms`,
-            animation: active
-              ? `wave 1.2s ease-in-out ${i * 80}ms infinite alternate`
-              : "none",
+            animation: active ? `wave 1.2s ease-in-out ${i * 80}ms infinite alternate` : "none",
           }}
         />
       ))}
@@ -128,24 +136,12 @@ function Waveform({ active }: { active: boolean }) {
 
 function MoodBadge({ mood }: { mood: string }) {
   const band = stressBandFromMood(mood);
-  if (band === "Low")
-    return (
-      <span className="inline-flex items-center rounded-full bg-calm-soft px-2.5 py-0.5 text-xs font-semibold text-calm">
-        Calm
-      </span>
-    );
-  if (band === "High")
-    return (
-      <span className="inline-flex items-center rounded-full bg-stressed-soft px-2.5 py-0.5 text-xs font-semibold text-stressed">
-        Stressed
-      </span>
-    );
-  return (
-    <span className="inline-flex items-center rounded-full bg-moderate-soft px-2.5 py-0.5 text-xs font-semibold text-moderate">
-      Moderate
-    </span>
-  );
+  if (band === "Low") return <span className="inline-flex items-center rounded-full bg-calm-soft px-2.5 py-0.5 text-xs font-semibold text-calm">Calm</span>;
+  if (band === "High") return <span className="inline-flex items-center rounded-full bg-stressed-soft px-2.5 py-0.5 text-xs font-semibold text-stressed">Stressed</span>;
+  return <span className="inline-flex items-center rounded-full bg-moderate-soft px-2.5 py-0.5 text-xs font-semibold text-moderate">Moderate</span>;
 }
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export function EmployeeDashboardPage() {
   const { token } = useAuth();
@@ -173,16 +169,26 @@ export function EmployeeDashboardPage() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const [recording, setRecording] = useState(false);
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * wellnessTips.length));
+  const [showBreathing, setShowBreathing] = useState(false);
 
   const tokenValue = token ?? "";
 
   const stressScore = useMemo(
-    () =>
-      summary.total_count === 0
-        ? 0
-        : Math.round((1 - Number(summary.avg_sentiment || 0)) * 100),
+    () => summary.total_count === 0 ? 0 : Math.round((1 - Number(summary.avg_sentiment || 0)) * 100),
     [summary],
   );
+
+  const streak = useMemo(() => getStreak(items), [items]);
+  const trendData = useMemo(() => buildTrendData(items), [items]);
+
+  const trendStats = useMemo(() => {
+    const recent = trendData.slice(-7);
+    if (recent.length === 0) return null;
+    const avg7 = Math.round(recent.reduce((s, d) => s + d.stress, 0) / recent.length);
+    const bestDay = recent.reduce((min, d) => (d.stress < min.stress ? d : min), recent[0]);
+    const isImproving = recent.length >= 2 && recent[recent.length - 1].stress < recent[0].stress;
+    return { avg7, bestDay: bestDay.day, isImproving };
+  }, [trendData]);
 
   const refresh = async () => {
     if (!tokenValue) return;
@@ -209,9 +215,7 @@ export function EmployeeDashboardPage() {
       formData.append("language", language);
       if (audio) formData.append("audio", audio);
       const response = await feedbackApi.submit(tokenValue, formData);
-      setStatus(
-        `Submitted. Emotion: ${response.feedback.emotionLabel}, Score: ${response.feedback.sentimentScore}`,
-      );
+      setStatus(`Submitted. Emotion: ${response.feedback.emotionLabel}, Score: ${response.feedback.sentimentScore}`);
       setMessage("");
       setLanguage("English");
       setAudio(null);
@@ -231,9 +235,7 @@ export function EmployeeDashboardPage() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
       const recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = (event) => {
-        if (event.data.size) chunksRef.current.push(event.data);
-      };
+      recorder.ondataavailable = (event) => { if (event.data.size) chunksRef.current.push(event.data); };
       recorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
         setVoiceBlob(blob);
@@ -318,6 +320,33 @@ export function EmployeeDashboardPage() {
       title="Your wellbeing workspace"
       subtitle="A private, guided check-in space for voice and text reflections."
     >
+      {/* Breathing exercise modal */}
+      {showBreathing && <BreathingExercise onClose={() => setShowBreathing(false)} />}
+
+      {/* High-stress alert banner */}
+      {stressScore > 66 && summary.total_count > 0 && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stressed/20 bg-stressed-soft px-4 py-3"
+        >
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true" className="text-xl">⚠️</span>
+            <div>
+              <p className="text-sm font-semibold text-stressed">High stress detected</p>
+              <p className="text-xs text-stressed/80">A short breathing exercise can help lower your stress response.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowBreathing(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-stressed px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#e05555]"
+          >
+            <Wind aria-hidden="true" className="h-4 w-4" />
+            Try breathing exercise
+          </button>
+        </div>
+      )}
+
       {/* Top row: gauge + sidebar */}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         {/* Stress monitor card */}
@@ -362,12 +391,10 @@ export function EmployeeDashboardPage() {
           <div className="mt-5 w-full max-w-md rounded-xl border border-border bg-canvas px-4 py-3 text-sm text-muted">
             {voiceText}
           </div>
-          {voiceStatus && (
-            <p className="mt-2 text-sm font-medium text-calm">{voiceStatus}</p>
-          )}
+          {voiceStatus && <p className="mt-2 text-sm font-medium text-calm">{voiceStatus}</p>}
         </Card>
 
-        {/* Sidebar: metric cards + wellness tip */}
+        {/* Sidebar: metric cards + streak + wellness tip + breathing shortcut */}
         <div className="flex flex-col gap-4">
           <Card>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted">Total check-ins</p>
@@ -390,6 +417,23 @@ export function EmployeeDashboardPage() {
             </Card>
           </div>
 
+          {/* Check-in streak */}
+          <Card className="border-accent/20 bg-accent-soft">
+            <p className="text-xs font-semibold uppercase tracking-wider text-accent">Check-in streak</p>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span aria-hidden="true" className="text-2xl">🔥</span>
+              <p className="text-3xl font-bold text-ink">{streak}</p>
+              <p className="text-sm text-muted">day{streak !== 1 ? "s" : ""}</p>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              {streak === 0
+                ? "Start your first check-in today!"
+                : streak === 1
+                ? "Great start — keep going tomorrow!"
+                : `${streak} days in a row — keep it up!`}
+            </p>
+          </Card>
+
           {/* Wellness tip */}
           <Card className="border-calm/20 bg-calm-soft">
             <div className="flex items-start justify-between gap-2">
@@ -410,6 +454,16 @@ export function EmployeeDashboardPage() {
               </button>
             </div>
           </Card>
+
+          {/* Breathing exercise shortcut */}
+          <button
+            type="button"
+            onClick={() => setShowBreathing(true)}
+            className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-muted transition-all hover:border-accent/30 hover:bg-accent-soft hover:text-accent"
+          >
+            <Wind aria-hidden="true" className="h-4 w-4" />
+            Open breathing exercise
+          </button>
         </div>
       </div>
 
@@ -434,7 +488,7 @@ export function EmployeeDashboardPage() {
                 <option>Tamil</option>
               </Select>
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="min-w-[200px] flex-1">
               <label className="mb-1.5 block text-xs font-medium text-muted">
                 Audio attachment (optional)
               </label>
@@ -451,14 +505,10 @@ export function EmployeeDashboardPage() {
           </div>
         </form>
         {status && (
-          <div role="status" className="mt-4 rounded-xl bg-calm-soft p-3 text-sm text-calm">
-            {status}
-          </div>
+          <div role="status" className="mt-4 rounded-xl bg-calm-soft p-3 text-sm text-calm">{status}</div>
         )}
         {error && (
-          <div role="alert" className="mt-4 rounded-xl bg-stressed-soft p-3 text-sm text-stressed">
-            {error}
-          </div>
+          <div role="alert" className="mt-4 rounded-xl bg-stressed-soft p-3 text-sm text-stressed">{error}</div>
         )}
       </Card>
 
@@ -469,9 +519,7 @@ export function EmployeeDashboardPage() {
           <div className="flex flex-col items-center py-12 text-center">
             <div className="mb-3 text-5xl" aria-hidden="true">📅</div>
             <p className="font-semibold text-ink">No sessions yet</p>
-            <p className="mt-1 text-sm text-muted">
-              Start monitoring to see your history here.
-            </p>
+            <p className="mt-1 text-sm text-muted">Start monitoring to see your history here.</p>
           </div>
         ) : (
           <div className="mt-4 space-y-3">
@@ -489,25 +537,17 @@ export function EmployeeDashboardPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-ink">
                         {new Date(item.created_at).toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
+                          month: "short", day: "numeric", year: "numeric",
                         })}
                       </p>
                       <p className="text-xs text-muted">
                         {new Date(item.created_at).toLocaleTimeString(undefined, {
-                          hour: "2-digit",
-                          minute: "2-digit",
+                          hour: "2-digit", minute: "2-digit",
                         })}
-                        {" · "}
-                        {item.language}
-                        {" · "}
-                        {item.emotion_label}
+                        {" · "}{item.language}{" · "}{item.emotion_label}
                       </p>
                       {item.message && (
-                        <p className="mt-0.5 max-w-sm truncate text-xs text-muted">
-                          {item.message}
-                        </p>
+                        <p className="mt-0.5 max-w-sm truncate text-xs text-muted">{item.message}</p>
                       )}
                     </div>
                     <MoodBadge mood={item.mood} />
@@ -521,6 +561,80 @@ export function EmployeeDashboardPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </Card>
+
+      {/* Personal stress trends */}
+      <Card>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Your stress trends</h2>
+            <p className="mt-1 text-sm text-muted">Daily average stress over your last 14 sessions</p>
+          </div>
+          {trendStats && (
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="text-center">
+                <p className="text-xs text-muted">7-day avg</p>
+                <p className="font-bold text-ink">{trendStats.avg7}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xs text-muted">Best day</p>
+                <p className="font-bold text-calm">{trendStats.bestDay}</p>
+              </div>
+              <div className="flex items-center gap-1">
+                {trendStats.isImproving ? (
+                  <>
+                    <TrendingDown aria-hidden="true" className="h-4 w-4 text-calm" />
+                    <span className="text-xs font-semibold text-calm">Improving</span>
+                  </>
+                ) : (
+                  <>
+                    <TrendingUp aria-hidden="true" className="h-4 w-4 text-stressed" />
+                    <span className="text-xs font-semibold text-stressed">Rising</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {trendData.length < 2 ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <div className="mb-3 text-5xl" aria-hidden="true">📈</div>
+            <p className="font-semibold text-ink">Not enough data yet</p>
+            <p className="mt-1 text-sm text-muted">
+              Complete check-ins on at least 2 different days to see your trend chart.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={trendData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EBEBEB" />
+                <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#6B7280" }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "#6B7280" }} />
+                <Tooltip
+                  formatter={(value) => [`${value}`, "Stress score"]}
+                  contentStyle={{ borderRadius: "12px", border: "1px solid #EBEBEB", fontSize: "13px" }}
+                />
+                <ReferenceLine
+                  y={50}
+                  stroke="#F59E0B"
+                  strokeDasharray="4 4"
+                  label={{ value: "Moderate threshold", position: "insideTopRight", fontSize: 11, fill: "#F59E0B" }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="stress"
+                  stroke="#6366F1"
+                  fill="rgba(99,102,241,0.10)"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#6366F1" }}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         )}
       </Card>

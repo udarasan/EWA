@@ -1,3 +1,4 @@
+import { ArrowRight, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Area,
@@ -14,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Link } from "react-router-dom";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 import { Card } from "../components/ui/card";
 import { useAuth } from "../context/auth-context";
@@ -67,6 +69,18 @@ export function AdminDashboardPage() {
     [dashboard],
   );
 
+  const weekComparison = useMemo(() => {
+    if (trend.length < 7) return null;
+    const thisWeek = trend.slice(-7).reduce((s, d) => s + d.count, 0);
+    const lastWeek = trend.slice(-14, -7).reduce((s, d) => s + d.count, 0);
+    const delta = lastWeek === 0 ? null : Math.round(((thisWeek - lastWeek) / lastWeek) * 100);
+    const mostActive = trend.slice(-7).reduce(
+      (max, d) => (d.count > max.count ? d : max),
+      trend[trend.length - 7],
+    );
+    return { thisWeek, lastWeek, delta, mostActiveDay: mostActive?.day ?? "—" };
+  }, [trend]);
+
   return (
     <DashboardLayout
       role="admin"
@@ -98,6 +112,90 @@ export function AdminDashboardPage() {
           <p className="mt-2 text-3xl font-bold text-moderate">{dashboard?.sentiment.Neutral ?? "—"}</p>
         </Card>
       </section>
+
+      {/* Week-over-week comparison */}
+      {weekComparison && (
+        <section aria-label="Week-over-week comparison">
+          <h2 className="mb-3 text-base font-semibold text-ink">This week vs last week</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {/* Submissions comparison */}
+            <Card>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Submissions this week</p>
+              <div className="mt-2 flex items-end gap-2">
+                <p className="text-3xl font-bold text-ink">{weekComparison.thisWeek}</p>
+                {weekComparison.delta !== null && (
+                  <span
+                    className={`mb-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      weekComparison.delta > 0
+                        ? "bg-calm-soft text-calm"
+                        : weekComparison.delta < 0
+                        ? "bg-stressed-soft text-stressed"
+                        : "bg-canvas text-muted"
+                    }`}
+                  >
+                    {weekComparison.delta > 0 ? "+" : ""}{weekComparison.delta}%
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                vs {weekComparison.lastWeek} last week
+              </p>
+            </Card>
+
+            {/* Trend direction */}
+            <Card>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Engagement trend</p>
+              <div className="mt-2 flex items-center gap-2">
+                {weekComparison.delta === null ? (
+                  <p className="text-lg font-bold text-muted">Not enough data</p>
+                ) : weekComparison.delta >= 0 ? (
+                  <>
+                    <TrendingUp aria-hidden="true" className="h-7 w-7 text-calm" />
+                    <div>
+                      <p className="text-lg font-bold text-calm">Improving</p>
+                      <p className="text-xs text-muted">More check-ins than last week</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <TrendingDown aria-hidden="true" className="h-7 w-7 text-stressed" />
+                    <div>
+                      <p className="text-lg font-bold text-stressed">Declining</p>
+                      <p className="text-xs text-muted">Fewer check-ins than last week</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* Most active day */}
+            <Card>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Most active day</p>
+              <p className="mt-2 text-2xl font-bold text-ink">{weekComparison.mostActiveDay}</p>
+              <p className="mt-1 text-xs text-muted">Highest submission day this week</p>
+            </Card>
+          </div>
+        </section>
+      )}
+
+      {/* Alert shortcut — shown when there may be at-risk employees */}
+      {(dashboard?.sentiment.Negative ?? 0) > 0 && (
+        <div className="flex items-center justify-between rounded-xl border border-stressed/20 bg-stressed-soft px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span aria-hidden="true" className="text-lg">⚠️</span>
+            <p className="text-sm font-medium text-stressed">
+              {dashboard!.sentiment.Negative} negative submission{dashboard!.sentiment.Negative > 1 ? "s" : ""} detected — some employees may need attention.
+            </p>
+          </div>
+          <Link
+            to="/admin/alerts"
+            className="flex shrink-0 items-center gap-1 text-sm font-semibold text-stressed hover:underline"
+          >
+            View alerts
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
+      )}
 
       {/* Charts row */}
       <section className="grid gap-6 lg:grid-cols-2">
