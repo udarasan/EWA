@@ -1,5 +1,5 @@
-import { Mic, MicOff, RefreshCw, Send, TrendingDown, TrendingUp, Wind } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Camera, CameraOff, Mic, MicOff, RefreshCw, Send, TrendingDown, TrendingUp, Wind } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { BreathingExercise } from "../components/employee/breathing-exercise";
+import { FaceStressScanner } from "../components/employee/face-stress-scanner";
 import { DashboardLayout } from "../components/layout/dashboard-layout";
 import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
@@ -37,7 +38,10 @@ const wellnessTips = [
   { emoji: "🎵", text: "Calm music at 60 BPM can synchronize your heart rate and reduce anxiety." },
 ];
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+type ScanMode = "voice" | "face" | "combined";
+const CONSENT_KEY = "faceStress_consentGiven";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function getStreak(items: FeedbackItem[]): number {
   if (items.length === 0) return 0;
@@ -74,7 +78,7 @@ function buildTrendData(items: FeedbackItem[]) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StressGauge({ score, active }: { score: number; active: boolean }) {
+function StressGauge({ score, active, mode }: { score: number; active: boolean; mode: ScanMode }) {
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
@@ -83,6 +87,8 @@ function StressGauge({ score, active }: { score: number; active: boolean }) {
   let label = "You're calm";
   if (score > 66) { color = "#F87171"; label = "High stress detected"; }
   else if (score > 33) { color = "#F59E0B"; label = "Feeling tense?"; }
+
+  const modeLabel = mode === "face" ? "Live · Face scan" : mode === "combined" ? "Live · Voice + Face" : "Avg · Voice";
 
   return (
     <div className="flex flex-col items-center">
@@ -97,12 +103,13 @@ function StressGauge({ score, active }: { score: number; active: boolean }) {
             transform="rotate(-90 100 100)"
             style={{ transition: "stroke-dashoffset 600ms ease, stroke 600ms ease" }}
           />
-          <text x="100" y="92" textAnchor="middle" dy="0.3em" fontSize="40" fontWeight="700" fill="#1A1A1A" fontFamily="Nunito, sans-serif">{score}</text>
-          <text x="100" y="122" textAnchor="middle" fontSize="13" fill="#6B7280" fontFamily="Nunito, sans-serif">stress score</text>
+          <text x="100" y="88" textAnchor="middle" fontSize="40" fontWeight="700" fill="#1A1A1A" fontFamily="Nunito, sans-serif">{score}</text>
+          <text x="100" y="112" textAnchor="middle" fontSize="12" fill="#6B7280" fontFamily="Nunito, sans-serif">stress score</text>
+          <text x="100" y="130" textAnchor="middle" fontSize="10" fill="#6B7280" fontFamily="Nunito, sans-serif">{modeLabel}</text>
         </svg>
         {active && (
           <span
-            aria-label="Recording active"
+            aria-label="Scan active"
             className="absolute right-0 top-0 h-4 w-4 rounded-full bg-calm"
             style={{ animation: "pulse-dot 1.4s ease-in-out infinite" }}
           />
@@ -141,6 +148,69 @@ function MoodBadge({ mood }: { mood: string }) {
   return <span className="inline-flex items-center rounded-full bg-moderate-soft px-2.5 py-0.5 text-xs font-semibold text-moderate">Moderate</span>;
 }
 
+/** Camera consent modal — shown once before enabling face mode */
+function CameraConsentModal({
+  onAccept,
+  onDecline,
+}: {
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onDecline(); };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onDecline]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Camera access consent"
+      onClick={(e) => { if (e.target === e.currentTarget) onDecline(); }}
+    >
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-[0_8px_40px_rgba(0,0,0,0.18)]">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-soft">
+          <Camera aria-hidden="true" className="h-7 w-7 text-accent" />
+        </div>
+        <h2 className="text-xl font-bold text-ink">Enable face stress detection?</h2>
+        <p className="mt-3 text-sm text-muted leading-relaxed">
+          This feature uses your camera to analyse facial expressions and estimate your stress level in real time.
+        </p>
+        <ul className="mt-4 space-y-2">
+          {[
+            { icon: "🔒", text: "All analysis runs locally in your browser — no video is ever uploaded." },
+            { icon: "🚫", text: "No images or video are stored anywhere." },
+            { icon: "⚡", text: "You can stop the scan at any time." },
+          ].map((item) => (
+            <li key={item.text} className="flex items-start gap-2 text-sm text-ink">
+              <span aria-hidden="true" className="mt-0.5 shrink-0">{item.icon}</span>
+              {item.text}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onAccept}
+            className="flex-1 rounded-xl bg-accent py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#4f52d4]"
+          >
+            Allow camera
+          </button>
+          <button
+            type="button"
+            onClick={onDecline}
+            className="flex-1 rounded-xl border border-border bg-surface py-2.5 text-sm font-semibold text-muted transition-colors hover:bg-canvas"
+          >
+            Not now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function EmployeeDashboardPage() {
@@ -171,12 +241,33 @@ export function EmployeeDashboardPage() {
   const [tipIndex, setTipIndex] = useState(() => Math.floor(Math.random() * wellnessTips.length));
   const [showBreathing, setShowBreathing] = useState(false);
 
+  // Face scan state
+  const [scanMode, setScanMode] = useState<ScanMode>("voice");
+  const [faceActive, setFaceActive] = useState(false);
+  const [faceScore, setFaceScore] = useState<number | null>(null);
+  const [consentGiven, setConsentGiven] = useState<boolean>(
+    () => localStorage.getItem(CONSENT_KEY) === "true",
+  );
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingMode, setPendingMode] = useState<ScanMode | null>(null);
+
   const tokenValue = token ?? "";
 
-  const stressScore = useMemo(
+  const historicalStressScore = useMemo(
     () => summary.total_count === 0 ? 0 : Math.round((1 - Number(summary.avg_sentiment || 0)) * 100),
     [summary],
   );
+
+  /** Score shown on the gauge depends on scan mode */
+  const displayScore = useMemo(() => {
+    if ((scanMode === "face") && faceScore !== null) return faceScore;
+    if (scanMode === "combined" && faceScore !== null) {
+      return Math.round(historicalStressScore * 0.5 + faceScore * 0.5);
+    }
+    return historicalStressScore;
+  }, [scanMode, faceScore, historicalStressScore]);
+
+  const isAnyActive = recording || faceActive;
 
   const streak = useMemo(() => getStreak(items), [items]);
   const trendData = useMemo(() => buildTrendData(items), [items]);
@@ -204,6 +295,49 @@ export function EmployeeDashboardPage() {
     refresh().catch((err) => setError(err instanceof Error ? err.message : "Failed to load data."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenValue]);
+
+  // ── Mode switching ────────────────────────────────────────────────────────
+
+  const applyMode = useCallback((mode: ScanMode) => {
+    setScanMode(mode);
+    // Stop face scan if switching away from face/combined
+    if (mode === "voice") {
+      setFaceActive(false);
+      setFaceScore(null);
+    }
+  }, []);
+
+  const handleModeSelect = useCallback(
+    (mode: ScanMode) => {
+      if (mode === scanMode) return;
+      if (mode !== "voice" && !consentGiven) {
+        setPendingMode(mode);
+        setShowConsentModal(true);
+        return;
+      }
+      applyMode(mode);
+    },
+    [scanMode, consentGiven, applyMode],
+  );
+
+  const handleConsentAccept = () => {
+    localStorage.setItem(CONSENT_KEY, "true");
+    setConsentGiven(true);
+    setShowConsentModal(false);
+    if (pendingMode) applyMode(pendingMode);
+    setPendingMode(null);
+  };
+
+  const handleConsentDecline = () => {
+    setShowConsentModal(false);
+    setPendingMode(null);
+  };
+
+  const handleFaceUpdate = useCallback((score: number) => {
+    setFaceScore(score);
+  }, []);
+
+  // ── Voice recording ───────────────────────────────────────────────────────
 
   const submitFeedback = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -314,17 +448,22 @@ export function EmployeeDashboardPage() {
 
   const tip = wellnessTips[tipIndex];
 
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
     <DashboardLayout
       role="employee"
       title="Your wellbeing workspace"
-      subtitle="A private, guided check-in space for voice and text reflections."
+      subtitle="A private, guided check-in space for voice, face, and text reflections."
     >
-      {/* Breathing exercise modal */}
+      {/* Modals */}
       {showBreathing && <BreathingExercise onClose={() => setShowBreathing(false)} />}
+      {showConsentModal && (
+        <CameraConsentModal onAccept={handleConsentAccept} onDecline={handleConsentDecline} />
+      )}
 
       {/* High-stress alert banner */}
-      {stressScore > 66 && summary.total_count > 0 && (
+      {displayScore > 66 && (historicalStressScore > 0 || faceScore !== null) && (
         <div
           role="alert"
           className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stressed/20 bg-stressed-soft px-4 py-3"
@@ -347,54 +486,115 @@ export function EmployeeDashboardPage() {
         </div>
       )}
 
+      {/* Mode toggle */}
+      <div className="flex items-center gap-1 rounded-xl border border-border bg-canvas p-1" role="group" aria-label="Monitoring mode">
+        {(
+          [
+            { value: "voice" as ScanMode, icon: <Mic className="h-4 w-4" />, label: "Voice" },
+            { value: "face" as ScanMode, icon: <Camera className="h-4 w-4" />, label: "Face" },
+            { value: "combined" as ScanMode, icon: <><Mic className="h-3.5 w-3.5" /><span className="text-[10px]">+</span><Camera className="h-3.5 w-3.5" /></>, label: "Combined" },
+          ] as const
+        ).map(({ value, icon, label }) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={scanMode === value}
+            onClick={() => handleModeSelect(value)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-all ${
+              scanMode === value
+                ? "bg-surface text-accent shadow-sm"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            <span aria-hidden="true" className="flex items-center gap-0.5">{icon}</span>
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Top row: gauge + sidebar */}
       <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
         {/* Stress monitor card */}
         <Card className="flex flex-col items-center py-8">
           <h2 className="mb-6 text-lg font-semibold text-ink">Stress monitor</h2>
-          <StressGauge score={stressScore} active={recording} />
-          <div className="mt-4 w-full max-w-xs">
-            <Waveform active={recording} />
-          </div>
+          <StressGauge score={displayScore} active={isAnyActive} mode={scanMode} />
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Select
-              className="w-36"
-              value={voiceLanguage}
-              onChange={(event) => setVoiceLanguage(event.target.value)}
-              aria-label="Voice language"
-            >
-              <option>English</option>
-              <option>Sinhala</option>
-              <option>Tamil</option>
-            </Select>
+          {/* Voice waveform — shown in voice + combined modes */}
+          {scanMode !== "face" && (
+            <div className="mt-4 w-full max-w-xs">
+              <Waveform active={recording} />
+            </div>
+          )}
 
-            {!recording ? (
-              <Button size="lg" variant="success" className="rounded-full px-8" onClick={startRecording}>
-                <Mic aria-hidden="true" className="mr-2 h-5 w-5" />
-                Start monitoring
-              </Button>
-            ) : (
-              <Button size="lg" variant="danger" className="rounded-full px-8" onClick={stopRecording}>
-                <MicOff aria-hidden="true" className="mr-2 h-5 w-5" />
-                Stop monitoring
-              </Button>
-            )}
+          {/* Voice controls */}
+          {(scanMode === "voice" || scanMode === "combined") && (
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Select
+                className="w-36"
+                value={voiceLanguage}
+                onChange={(event) => setVoiceLanguage(event.target.value)}
+                aria-label="Voice language"
+              >
+                <option>English</option>
+                <option>Sinhala</option>
+                <option>Tamil</option>
+              </Select>
 
-            {voiceBlob && !recording && (
-              <Button onClick={submitVoice} disabled={voiceUploading}>
-                {voiceUploading ? "Saving..." : "Save session"}
-              </Button>
-            )}
-          </div>
+              {!recording ? (
+                <Button size="lg" variant="success" className="rounded-full px-8" onClick={startRecording}>
+                  <Mic aria-hidden="true" className="mr-2 h-5 w-5" />
+                  Start voice
+                </Button>
+              ) : (
+                <Button size="lg" variant="danger" className="rounded-full px-8" onClick={stopRecording}>
+                  <MicOff aria-hidden="true" className="mr-2 h-5 w-5" />
+                  Stop voice
+                </Button>
+              )}
 
-          <div className="mt-5 w-full max-w-md rounded-xl border border-border bg-canvas px-4 py-3 text-sm text-muted">
-            {voiceText}
-          </div>
+              {voiceBlob && !recording && (
+                <Button onClick={submitVoice} disabled={voiceUploading}>
+                  {voiceUploading ? "Saving..." : "Save session"}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Voice transcript */}
+          {(scanMode === "voice" || scanMode === "combined") && (
+            <div className="mt-5 w-full max-w-md rounded-xl border border-border bg-canvas px-4 py-3 text-sm text-muted">
+              {voiceText}
+            </div>
+          )}
           {voiceStatus && <p className="mt-2 text-sm font-medium text-calm">{voiceStatus}</p>}
+
+          {/* Face camera preview + controls */}
+          {(scanMode === "face" || scanMode === "combined") && (
+            <div className="mt-5 w-full max-w-md space-y-3">
+              <FaceStressScanner active={faceActive} onStressUpdate={handleFaceUpdate} />
+              <div className="flex justify-center gap-3">
+                {!faceActive ? (
+                  <Button size="lg" variant="success" className="rounded-full px-8" onClick={() => setFaceActive(true)}>
+                    <Camera aria-hidden="true" className="mr-2 h-5 w-5" />
+                    Start face scan
+                  </Button>
+                ) : (
+                  <Button size="lg" variant="danger" className="rounded-full px-8" onClick={() => { setFaceActive(false); setFaceScore(null); }}>
+                    <CameraOff aria-hidden="true" className="mr-2 h-5 w-5" />
+                    Stop face scan
+                  </Button>
+                )}
+              </div>
+              {faceActive && faceScore !== null && (
+                <p className="text-center text-xs text-muted">
+                  Live face stress: <span className="font-semibold text-ink">{faceScore}</span> · Processed locally in your browser
+                </p>
+              )}
+            </div>
+          )}
         </Card>
 
-        {/* Sidebar: metric cards + streak + wellness tip + breathing shortcut */}
+        {/* Sidebar: metric cards + streak + wellness tip */}
         <div className="flex flex-col gap-4">
           <Card>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted">Total check-ins</p>
@@ -426,11 +626,7 @@ export function EmployeeDashboardPage() {
               <p className="text-sm text-muted">day{streak !== 1 ? "s" : ""}</p>
             </div>
             <p className="mt-1 text-xs text-muted">
-              {streak === 0
-                ? "Start your first check-in today!"
-                : streak === 1
-                ? "Great start — keep going tomorrow!"
-                : `${streak} days in a row — keep it up!`}
+              {streak === 0 ? "Start your first check-in today!" : streak === 1 ? "Great start — keep going tomorrow!" : `${streak} days in a row — keep it up!`}
             </p>
           </Card>
 
